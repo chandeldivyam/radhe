@@ -2,12 +2,12 @@
 import logging
 import json
 from datetime import datetime
-from opensearchpy import OpenSearch
+from opensearchpy import AsyncOpenSearch
 from app.core.config import settings
 from fastapi import Request
 import asyncio
 
-class OpenSearchHandler(logging.Handler):
+class AsyncOpenSearchHandler(logging.Handler):
     def __init__(self):
         super().__init__()
         self._initialize_client()
@@ -15,12 +15,14 @@ class OpenSearchHandler(logging.Handler):
         self.request_index = f"{settings.PROJECT_NAME}-requests-{datetime.now().strftime('%Y-%m')}"
         self.console_handler = logging.StreamHandler()
         self.console_handler.setFormatter(logging.Formatter('%(message)s'))
+        self._app_index_created = False
+        self._request_index_created = False
 
     def _initialize_client(self):
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
         
-        self.client = OpenSearch(
+        self.client = AsyncOpenSearch(
             hosts=[{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
             http_auth=None,
             use_ssl=False,
@@ -53,18 +55,18 @@ class OpenSearchHandler(logging.Handler):
                 'headers': dict(request.headers),
                 'client_host': request.client.host if request.client else None,
                 'body': body if body else None,
-                'endpoint': request.url.path.split('/')[-1],  # Last part of the path
+                'endpoint': request.url.path.split('/')[-1],
                 'api_version': 'v1' if '/v1/' in request.url.path else 'unknown',
                 'api_group': next((segment for segment in request.url.path.split('/') 
                                 if segment not in ['api', 'v1', '']), 'unknown')
             }
 
             # Ensure index exists
-            if not hasattr(self, '_request_index_created'):
+            if not self._request_index_created:
                 await self._ensure_request_index_exists()
                 self._request_index_created = True
 
-            self.client.index(
+            await self.client.index(
                 index=self.request_index,
                 body=request_entry,
                 refresh=True
@@ -82,7 +84,7 @@ class OpenSearchHandler(logging.Handler):
                 )
             )
 
-    def emit(self, record):
+    async def async_emit(self, record):
         if record.name.startswith(('opensearch', 'elastic_transport')):
             return
 
@@ -103,11 +105,11 @@ class OpenSearchHandler(logging.Handler):
             if record.exc_info:
                 log_entry['exception'] = self.formatter.formatException(record.exc_info)
 
-            if not hasattr(self, '_app_index_created'):
-                self._ensure_app_index_exists()
+            if not self._app_index_created:
+                await self._ensure_app_index_exists()
                 self._app_index_created = True
 
-            self.client.index(
+            await self.client.index(
                 index=self.app_index,
                 body=log_entry,
                 refresh=True
@@ -125,15 +127,28 @@ class OpenSearchHandler(logging.Handler):
                 )
             )
 
-    def _ensure_app_index_exists(self):
-        if not self.client.indices.exists(index=self.app_index):
-            self._create_app_index()
+    def emit(self, record):
+        # Create a new event loop if one doesn't exist
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        
+        # Run async_emit in the event loop
+        loop.create_task(self.async_emit(record))
+
+    async def _ensure_app_index_exists(self):
+        if not await self.client.indices.exists(index=self.app_index):
+            await self._create_app_index()
+        self._app_index_created = True
 
     async def _ensure_request_index_exists(self):
-        if not self.client.indices.exists(index=self.request_index):
-            self._create_request_index()
+        if not await self.client.indices.exists(index=self.request_index):
+            await self._create_request_index()
+        self._request_index_created = True
 
-    def _create_app_index(self):
+    async def _create_app_index(self):
         mapping = {
             "mappings": {
                 "properties": {
@@ -153,9 +168,9 @@ class OpenSearchHandler(logging.Handler):
                 "number_of_replicas": 0
             }
         }
-        self.client.indices.create(index=self.app_index, body=mapping)
+        await self.client.indices.create(index=self.app_index, body=mapping)
 
-    def _create_request_index(self):
+    async def _create_request_index(self):
         mapping = {
             "mappings": {
                 "properties": {
@@ -178,7 +193,10 @@ class OpenSearchHandler(logging.Handler):
                 "number_of_replicas": 0
             }
         }
-        self.client.indices.create(index=self.request_index, body=mapping)
+        await self.client.indices.create(index=self.request_index, body=mapping)
+
+    async def close(self):
+        await self.client.close()
 
 def setup_logging():
     root_logger = logging.getLogger()
@@ -190,7 +208,7 @@ def setup_logging():
     console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     console_handler.setFormatter(console_formatter)
     
-    opensearch_handler = OpenSearchHandler()
+    opensearch_handler = AsyncOpenSearchHandler()
     opensearch_handler.setLevel(logging.INFO)
     
     opensearch_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

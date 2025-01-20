@@ -14,4 +14,5 @@ pydantic
 python-dotenv
 email-validator
 python-json-logger
-opensearch-py
+opensearch-py[async]
+aiohttp
