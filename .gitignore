@@ -1,0 +1,105 @@
+# ==========================================
+# General
+# ==========================================
+
+# OS generated files
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDEs
+.idea/
+.vscode/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.tmproj
+*.ipr
+*.iws
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==========================================
+# Python (FastAPI)
+# ==========================================
+
+# Python Bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+virtualenv/
+virtualenv_runtime/
+
+# Packages
+*.egg-info
+*.dist-info
+.pytest_cache
+*.pth
+
+# FastAPI specific files
+.fastapi_config.yaml
+
+# ==========================================
+# Javascript (NextJS)
+# ==========================================
+
+# node_modules
+node_modules/
+
+# Next.js build outputs
+.next/
+out/
+build/
+
+# Next.js cache
+.next/cache/
+
+# NPM-related
+package-lock.json
+yarn.lock
+
+# ==========================================
+# Docker
+# ==========================================
+
+# Docker build artifacts
+docker-compose.override.yml
+docker-compose.yml # If you don't want to check in this file
+*.dockerignore
+.dockerenv
+.docker
+*/Dockerfile
+
+# ==========================================
+# Environment Variables
+# ==========================================
+
+*.env
+*.env.*
+.env
+.env.*
+**/local.env
+
+# ==========================================
+# Other
+# ==========================================
+
+# IDE specific folders
+
+# Cache and temporary files
+*.cache
+*.tmp
+
+# Generated SQL dumps or other data files
+*.dump
