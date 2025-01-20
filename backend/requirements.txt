@@ -13,3 +13,5 @@ pydantic-settings
 pydantic
 python-dotenv
 email-validator
+python-json-logger
+opensearch-py

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
 
+    # OpenSearch
+    OPENSEARCH_HOST: str
+    OPENSEARCH_PORT: str
+
     class Config:
         case_sensitive = True
         env_file = ".env"
