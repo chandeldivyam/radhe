@@ -16,12 +16,13 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app_network
 
   db:
-    image: postgres:14
+    image: pgvector/pgvector:pg16
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
@@ -32,6 +33,12 @@ services:
       - "5433:5432"
     networks:
       - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:alpine

@@ -8,8 +8,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append("/app")
 
-from app.models.organization import Organization
-from app.models.user import User
 from app.db.base import Base
 from app.core.config import settings
 

@@ -10,6 +10,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+# Import all models at the end to avoid circular imports
+from app.models.base import *  # noqa
+
 # Dependency
 def get_db():
     db = SessionLocal()

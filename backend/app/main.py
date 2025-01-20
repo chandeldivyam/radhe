@@ -23,4 +23,4 @@ app.include_router(users.router, prefix="/api/v1", tags=["users"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the API changed2"}
+    return {"message": "Welcome to the digital-twin-backend"}
