@@ -16,3 +16,4 @@ email-validator
 python-json-logger
 opensearch-py[async]
 aiohttp
+minio

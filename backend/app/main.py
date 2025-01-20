@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import organizations, users
+from app.api.v1 import organizations, users, files
 from app.core.logging import setup_logging
 import logging
 import time
@@ -56,6 +56,7 @@ async def log_requests(request: Request, call_next):
 # Include routers
 app.include_router(organizations.router, prefix="/api/v1", tags=["organizations"])
 app.include_router(users.router, prefix="/api/v1", tags=["users"])
+app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
 
 @app.on_event("startup")
 async def startup_event():
