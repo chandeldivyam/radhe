@@ -1,28 +1,27 @@
+# logging.py
 import logging
 import json
 from datetime import datetime
 from opensearchpy import OpenSearch
 from app.core.config import settings
+from fastapi import Request
+import asyncio
 
 class OpenSearchHandler(logging.Handler):
     def __init__(self):
         super().__init__()
         self._initialize_client()
-        self.index_name = f"{settings.PROJECT_NAME}-logs-{datetime.now().strftime('%Y-%m')}"
-        # Set up console handler for internal errors
+        self.app_index = f"{settings.PROJECT_NAME}-logs-{datetime.now().strftime('%Y-%m')}"
+        self.request_index = f"{settings.PROJECT_NAME}-requests-{datetime.now().strftime('%Y-%m')}"
         self.console_handler = logging.StreamHandler()
         self.console_handler.setFormatter(logging.Formatter('%(message)s'))
 
     def _initialize_client(self):
-        # Disable opensearch-py internal logging
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
         
         self.client = OpenSearch(
-            hosts=[{
-                'host': settings.OPENSEARCH_HOST,
-                'port': int(settings.OPENSEARCH_PORT)
-            }],
+            hosts=[{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
             http_auth=None,
             use_ssl=False,
             verify_certs=False,
@@ -32,8 +31,58 @@ class OpenSearchHandler(logging.Handler):
             max_retries=3
         )
 
+    async def log_request(self, request: Request, request_id: str):
+        try:
+            # Read request body
+            body = None
+            if request.method in ['POST', 'PUT', 'PATCH']:
+                body = await request.body()
+                try:
+                    body = json.loads(body)
+                except:
+                    body = str(body)
+
+            # Create request log entry
+            request_entry = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'request_id': request_id,
+                'method': request.method,
+                'url': str(request.url),
+                'path': request.url.path,
+                'query_params': dict(request.query_params),
+                'headers': dict(request.headers),
+                'client_host': request.client.host if request.client else None,
+                'body': body if body else None,
+                'endpoint': request.url.path.split('/')[-1],  # Last part of the path
+                'api_version': 'v1' if '/v1/' in request.url.path else 'unknown',
+                'api_group': next((segment for segment in request.url.path.split('/') 
+                                if segment not in ['api', 'v1', '']), 'unknown')
+            }
+
+            # Ensure index exists
+            if not hasattr(self, '_request_index_created'):
+                await self._ensure_request_index_exists()
+                self._request_index_created = True
+
+            self.client.index(
+                index=self.request_index,
+                body=request_entry,
+                refresh=True
+            )
+        except Exception as e:
+            self.console_handler.emit(
+                logging.LogRecord(
+                    name='opensearch_handler',
+                    level=logging.ERROR,
+                    pathname='',
+                    lineno=0,
+                    msg=f"Failed to log request: {str(e)}",
+                    args=(),
+                    exc_info=None
+                )
+            )
+
     def emit(self, record):
-        # Skip logs from opensearch-related loggers
         if record.name.startswith(('opensearch', 'elastic_transport')):
             return
 
@@ -50,22 +99,20 @@ class OpenSearchHandler(logging.Handler):
             
             if hasattr(record, 'request_id'):
                 log_entry['request_id'] = record.request_id
-                
+
             if record.exc_info:
                 log_entry['exception'] = self.formatter.formatException(record.exc_info)
 
-            # Ensure index exists
-            if not hasattr(self, '_index_created'):
-                self._ensure_index_exists()
-                self._index_created = True
+            if not hasattr(self, '_app_index_created'):
+                self._ensure_app_index_exists()
+                self._app_index_created = True
 
             self.client.index(
-                index=self.index_name,
+                index=self.app_index,
                 body=log_entry,
                 refresh=True
             )
         except Exception as e:
-            # Log errors to console without going through the logging system
             self.console_handler.emit(
                 logging.LogRecord(
                     name='opensearch_handler',
@@ -78,24 +125,15 @@ class OpenSearchHandler(logging.Handler):
                 )
             )
 
-    def _ensure_index_exists(self):
-        try:
-            if not self.client.indices.exists(index=self.index_name):
-                self._create_index()
-        except Exception as e:
-            self.console_handler.emit(
-                logging.LogRecord(
-                    name='opensearch_handler',
-                    level=logging.ERROR,
-                    pathname='',
-                    lineno=0,
-                    msg=f"Failed to check/create index: {str(e)}",
-                    args=(),
-                    exc_info=None
-                )
-            )
+    def _ensure_app_index_exists(self):
+        if not self.client.indices.exists(index=self.app_index):
+            self._create_app_index()
 
-    def _create_index(self):
+    async def _ensure_request_index_exists(self):
+        if not self.client.indices.exists(index=self.request_index):
+            self._create_request_index()
+
+    def _create_app_index(self):
         mapping = {
             "mappings": {
                 "properties": {
@@ -115,42 +153,53 @@ class OpenSearchHandler(logging.Handler):
                 "number_of_replicas": 0
             }
         }
-        
-        self.client.indices.create(
-            index=self.index_name,
-            body=mapping
-        )
+        self.client.indices.create(index=self.app_index, body=mapping)
+
+    def _create_request_index(self):
+        mapping = {
+            "mappings": {
+                "properties": {
+                    "timestamp": {"type": "date"},
+                    "request_id": {"type": "keyword"},
+                    "method": {"type": "keyword"},
+                    "url": {"type": "keyword"},
+                    "path": {"type": "keyword"},
+                    "query_params": {"type": "object"},
+                    "headers": {"type": "object"},
+                    "body": {"type": "object"},
+                    "client_host": {"type": "ip"},
+                    "endpoint": {"type": "keyword"},
+                    "api_version": {"type": "keyword"},
+                    "api_group": {"type": "keyword"}
+                }
+            },
+            "settings": {
+                "number_of_shards": 1,
+                "number_of_replicas": 0
+            }
+        }
+        self.client.indices.create(index=self.request_index, body=mapping)
 
 def setup_logging():
-    # Remove any existing handlers
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
     
-    # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     console_handler.setFormatter(console_formatter)
     
-    # Create OpenSearch handler
     opensearch_handler = OpenSearchHandler()
     opensearch_handler.setLevel(logging.INFO)
     
-    # Create formatter
-    opensearch_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    opensearch_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     opensearch_handler.setFormatter(opensearch_formatter)
     
-    # Configure root logger
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
     
-    # Add handlers
     root_logger.addHandler(console_handler)
     root_logger.addHandler(opensearch_handler)
     
-    return root_logger
+    return root_logger, opensearch_handler

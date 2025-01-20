@@ -8,7 +8,7 @@ import time
 import uuid
 
 # Setup logging
-logger = setup_logging()
+logger, opensearch_handler = setup_logging()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -30,22 +30,20 @@ async def log_requests(request: Request, call_next):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
+    # Log request details to OpenSearch
+    await opensearch_handler.log_request(request, request_id)
+    
     # Add request ID to log context
     logger.info(
-        f"Request started",
-        extra={
-            "request_id": request_id,
-            "method": request.method,
-            "url": str(request.url),
-            "client_host": request.client.host if request.client else None,
-        }
+        "Request started",
+        extra={"request_id": request_id}
     )
     
     response = await call_next(request)
     
     process_time = time.time() - start_time
     logger.info(
-        f"Request completed",
+        "Request completed",
         extra={
             "request_id": request_id,
             "process_time_ms": round(process_time * 1000, 2),
