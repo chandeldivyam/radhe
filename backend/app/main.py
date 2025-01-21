@@ -69,4 +69,4 @@ async def shutdown_event():
 @app.get("/")
 def read_root():
     logger.info("Root endpoint accessed")
-    return {"message": "Welcome to the digital-twin-backend"}
+    return {"message": "Welcome to the radhe-backend"}
