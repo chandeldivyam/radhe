@@ -103,7 +103,37 @@ services:
         condition: service_healthy
     networks:
       - app_network
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/dev/backend.dockerfile
+    command: celery -A celery_worker worker --loglevel=info
+    volumes:
+      - ./backend:/app
+      - ./.env:/app/.env
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - app_network
 
+  flower:
+    build:
+      context: .
+      dockerfile: docker/dev/backend.dockerfile
+    command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    ports:
+      - "5555:5555"
+    volumes:
+      - ./backend:/app
+      - ./.env:/app/.env
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - app_network
+    profiles:
+      - flower
 
 networks:
   app_network:

@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     OPENSEARCH_HOST: str
     OPENSEARCH_PORT: str
 
+    # Flower
+    ENABLE_FLOWER: bool = False
+    FLOWER_PORT: int = 5555
+    FLOWER_USER: str
+    FLOWER_PASSWORD: str
+
     class Config:
         case_sensitive = True
         env_file = ".env"
