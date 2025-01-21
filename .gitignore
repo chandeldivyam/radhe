@@ -86,9 +86,8 @@ docker-compose.yml # If you don't want to check in this file
 # ==========================================
 
 *.env
-*.env.*
+*.env.frontend
 .env
-.env.*
 **/local.env
 
 # ==========================================
