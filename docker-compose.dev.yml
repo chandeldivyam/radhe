@@ -103,6 +103,7 @@ services:
         condition: service_healthy
     networks:
       - app_network
+  
   celery_worker:
     build:
       context: .
@@ -135,6 +136,25 @@ services:
     profiles:
       - flower
 
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/dev/frontend.dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - ./.env.frontend:/app/.env.local
+    ports:
+      - "3124:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    networks:
+      - app_network
+      
 networks:
   app_network:
     driver: bridge

@@ -1,10 +1,23 @@
 from typing import List
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl
+from pydantic import validator
+import json
 
 class Settings(BaseSettings):
     PROJECT_NAME: str
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl]
+    BACKEND_CORS_ORIGINS: List[str]
+
+    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            try:
+                # Parse the JSON string into a list
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # If it's a single URL
+                return [v]
+        return v
+
     
     # Database
     POSTGRES_HOST: str
@@ -35,6 +48,9 @@ class Settings(BaseSettings):
     FLOWER_PORT: int = 5555
     FLOWER_USER: str
     FLOWER_PASSWORD: str
+
+    # Frontend
+    NEXT_PUBLIC_API_URL: str
 
     class Config:
         case_sensitive = True
