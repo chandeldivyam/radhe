@@ -1,0 +1,8 @@
+# terraform/.gitignore
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+.terraform.lock.hcl
+*.backup
