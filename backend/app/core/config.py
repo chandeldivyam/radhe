@@ -5,6 +5,7 @@ import json
 
 class Settings(BaseSettings):
     PROJECT_NAME: str
+    ENVIRONMENT: str = "development"
     BACKEND_CORS_ORIGINS: List[str]
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)

@@ -10,21 +10,27 @@ import asyncio
 class AsyncOpenSearchHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        self._initialize_client()
-        self.app_index = f"{settings.PROJECT_NAME}-logs-{datetime.now().strftime('%Y-%m')}"
-        self.request_index = f"{settings.PROJECT_NAME}-requests-{datetime.now().strftime('%Y-%m')}"
         self.console_handler = logging.StreamHandler()
         self.console_handler.setFormatter(logging.Formatter('%(message)s'))
-        self._app_index_created = False
-        self._request_index_created = False
+        
+        # Only initialize OpenSearch client in production
+        if settings.ENVIRONMENT == "production":
+            self._initialize_client()
+            self.app_index = f"{settings.PROJECT_NAME}-logs-{datetime.now().strftime('%Y-%m')}"
+            self.request_index = f"{settings.PROJECT_NAME}-requests-{datetime.now().strftime('%Y-%m')}"
+            self._app_index_created = False
+            self._request_index_created = False
 
     def _initialize_client(self):
+        if not settings.ENVIRONMENT == "production":
+            return
+
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
         
         self.client = AsyncOpenSearch(
             hosts=[{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
-            http_auth=None,
+            http_auth=(settings.OPENSEARCH_USER, settings.OPENSEARCH_PASSWORD),
             use_ssl=False,
             verify_certs=False,
             ssl_show_warn=False,
@@ -34,6 +40,9 @@ class AsyncOpenSearchHandler(logging.Handler):
         )
 
     async def log_request(self, request: Request, request_id: str):
+        if not settings.ENVIRONMENT == "production":
+            return
+
         try:
             # Read request body
             body = None
@@ -85,6 +94,13 @@ class AsyncOpenSearchHandler(logging.Handler):
             )
 
     async def async_emit(self, record):
+        # Always log to console
+        self.console_handler.emit(record)
+
+        # Only log to OpenSearch in production
+        if not settings.ENVIRONMENT == "production":
+            return
+
         if record.name.startswith(('opensearch', 'elastic_transport')):
             return
 
@@ -128,14 +144,19 @@ class AsyncOpenSearchHandler(logging.Handler):
             )
 
     def emit(self, record):
-        # Create a new event loop if one doesn't exist
+        # Always log to console
+        self.console_handler.emit(record)
+
+        # Only use OpenSearch in production
+        if not settings.ENVIRONMENT == "production":
+            return
+
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
         
-        # Run async_emit in the event loop
         loop.create_task(self.async_emit(record))
 
     async def _ensure_app_index_exists(self):
@@ -196,7 +217,8 @@ class AsyncOpenSearchHandler(logging.Handler):
         await self.client.indices.create(index=self.request_index, body=mapping)
 
     async def close(self):
-        await self.client.close()
+        if settings.ENVIRONMENT == "production" and hasattr(self, 'client'):
+            await self.client.close()
 
 def setup_logging():
     root_logger = logging.getLogger()
@@ -218,6 +240,9 @@ def setup_logging():
     root_logger.setLevel(logging.INFO)
     
     root_logger.addHandler(console_handler)
-    root_logger.addHandler(opensearch_handler)
+    
+    # Only add OpenSearch handler in production
+    if settings.ENVIRONMENT == "production":
+        root_logger.addHandler(opensearch_handler)
     
     return root_logger, opensearch_handler

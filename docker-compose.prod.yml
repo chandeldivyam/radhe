@@ -132,6 +132,17 @@ services:
     container_name: opensearch
     environment:
       - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_PASSWORD}"
+      - plugins.security.ssl.http.enabled=false
+      - "OPENSEARCH_PATH_CONF=/usr/share/opensearch/config"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 60s
     ulimits:
       memlock:
         soft: -1
@@ -143,6 +154,12 @@ services:
       - traefik_network
     volumes:
       - opensearch_data:/usr/share/opensearch/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opensearch.rule=Host(`logs.radhe.space`)"
+      - "traefik.http.routers.opensearch.entrypoints=websecure"
+      - "traefik.http.routers.opensearch.tls.certresolver=myresolver"
+      - "traefik.http.services.opensearch.loadbalancer.server.port=9200"
 
   # opensearch-dashboards:
   #   image: opensearchproject/opensearch-dashboards:2.11.1
