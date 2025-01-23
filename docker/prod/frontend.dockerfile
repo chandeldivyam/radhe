@@ -18,7 +18,11 @@ RUN pnpm build
 FROM node:20-alpine as runner
 WORKDIR /app
 
+RUN npm install -g pnpm
+
 COPY --from=builder /app ./
+
+RUN pnpm install --production
 
 EXPOSE 3000
 
