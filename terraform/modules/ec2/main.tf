@@ -61,7 +61,8 @@ resource "aws_instance" "app" {
                 curl \
                 gnupg \
                 lsb-release \
-                git
+                git \
+                apache2-utils
 
               # Install Docker
               curl -fsSL https://get.docker.com -o get-docker.sh

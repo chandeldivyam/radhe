@@ -73,8 +73,6 @@ services:
         condition: service_started
       minio:
         condition: service_started
-      opensearch:
-        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.radhe.space`)"
