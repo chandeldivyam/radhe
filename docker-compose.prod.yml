@@ -38,33 +38,8 @@ services:
       dockerfile: docker/prod/backend.dockerfile
     container_name: backend
     restart: unless-stopped
-    environment:
-      # Database
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      # Backend
-      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
-      SECRET_KEY: ${SECRET_KEY}
-      PROJECT_NAME: ${PROJECT_NAME}
-      # S3/MinIO
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_HOST: ${MINIO_HOST}
-      MINIO_PORT: ${MINIO_PORT}
-      # Redis
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      # OpenSearch
-      OPENSEARCH_HOST: ${OPENSEARCH_HOST}
-      OPENSEARCH_PORT: ${OPENSEARCH_PORT}
-      # Flower
-      ENABLE_FLOWER: ${ENABLE_FLOWER}
-      FLOWER_PORT: ${FLOWER_PORT}
-      FLOWER_USER: ${FLOWER_USER}
-      FLOWER_PASSWORD: ${FLOWER_PASSWORD}
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
@@ -157,10 +132,6 @@ services:
     container_name: opensearch
     environment:
       - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-      - DISABLE_SECURITY_PLUGIN=true
-      - DISABLE_INSTALL_DEMO_CONFIG=true
     ulimits:
       memlock:
         soft: -1
@@ -173,22 +144,22 @@ services:
     volumes:
       - opensearch_data:/usr/share/opensearch/data
 
-  opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2.11.1
-    container_name: opensearch-dashboards
-    environment:
-      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
-      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
-    depends_on:
-      - opensearch
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.opensearch-dashboard.rule=Host(`search.radhe.space`)"
-      - "traefik.http.routers.opensearch-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.opensearch-dashboard.tls.certresolver=myresolver"
-      - "traefik.http.services.opensearch-dashboard.loadbalancer.server.port=5601"
-    networks:
-      - traefik_network
+  # opensearch-dashboards:
+  #   image: opensearchproject/opensearch-dashboards:2.11.1
+  #   container_name: opensearch-dashboards
+  #   environment:
+  #     - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+  #     - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+  #   depends_on:
+  #     - opensearch
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.opensearch-dashboard.rule=Host(`search.radhe.space`)"
+  #     - "traefik.http.routers.opensearch-dashboard.entrypoints=websecure"
+  #     - "traefik.http.routers.opensearch-dashboard.tls.certresolver=myresolver"
+  #     - "traefik.http.services.opensearch-dashboard.loadbalancer.server.port=5601"
+  #   networks:
+  #     - traefik_network
 
   celery_worker:
     build:
@@ -197,21 +168,8 @@ services:
     container_name: celery_worker
     restart: unless-stopped
     command: celery -A celery_worker worker --loglevel=info
-    environment:
-      # Database
-      POSTGRES_SERVER: ${POSTGRES_HOST}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PORT: ${POSTGRES_PORT}
-      # Redis
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      # MinIO
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_HOST: ${MINIO_HOST}
-      MINIO_PORT: ${MINIO_PORT}
+    env_file:
+      - .env
     depends_on:
       backend:
         condition: service_healthy
@@ -227,13 +185,8 @@ services:
     container_name: flower
     restart: unless-stopped
     command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
-    environment:
-      # Redis
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
-      # Flower
-      FLOWER_USER: ${FLOWER_USER}
-      FLOWER_PASSWORD: ${FLOWER_PASSWORD}
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5555/"]
       interval: 30s
