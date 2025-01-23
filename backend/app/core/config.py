@@ -49,9 +49,6 @@ class Settings(BaseSettings):
     FLOWER_USER: str
     FLOWER_PASSWORD: str
 
-    # Frontend
-    NEXT_PUBLIC_API_URL: str
-
     class Config:
         case_sensitive = True
         env_file = ".env"
