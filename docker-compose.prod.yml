@@ -23,7 +23,7 @@ services:
     labels:
       - "traefik.enable=true"
       # Dashboard
-      - "traefik.http.routers.dashboard.rule=Host(`traefik.radhe.world`)"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.radhe.space`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
@@ -77,12 +77,12 @@ services:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.radhe.world`)"
+      - "traefik.http.routers.backend.rule=Host(`api.radhe.space`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
       # HTTP -> HTTPS redirect
-      - "traefik.http.routers.backend_insecure.rule=Host(`api.radhe.world`)"
+      - "traefik.http.routers.backend_insecure.rule=Host(`api.radhe.space`)"
       - "traefik.http.routers.backend_insecure.entrypoints=web"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.routers.backend_insecure.middlewares=redirect-to-https"
@@ -131,12 +131,12 @@ services:
     labels:
       # MinIO API
       - "traefik.enable=true"
-      - "traefik.http.routers.minio-api.rule=Host(`minio.radhe.world`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.minio-api.rule=Host(`minio.radhe.space`) && PathPrefix(`/api/`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
       # MinIO Console
-      - "traefik.http.routers.minio-console.rule=Host(`minio.radhe.world`)"
+      - "traefik.http.routers.minio-console.rule=Host(`minio.radhe.space`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
@@ -174,7 +174,7 @@ services:
       - opensearch
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.opensearch-dashboard.rule=Host(`search.radhe.world`)"
+      - "traefik.http.routers.opensearch-dashboard.rule=Host(`search.radhe.space`)"
       - "traefik.http.routers.opensearch-dashboard.entrypoints=websecure"
       - "traefik.http.routers.opensearch-dashboard.tls.certresolver=myresolver"
       - "traefik.http.services.opensearch-dashboard.loadbalancer.server.port=5601"
@@ -237,7 +237,7 @@ services:
         condition: service_started
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.flower.rule=Host(`flower.radhe.world`)"
+      - "traefik.http.routers.flower.rule=Host(`flower.radhe.space`)"
       - "traefik.http.routers.flower.entrypoints=websecure"
       - "traefik.http.routers.flower.tls.certresolver=myresolver"
       - "traefik.http.services.flower.loadbalancer.server.port=5555"
@@ -251,18 +251,18 @@ services:
     container_name: frontend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: "https://api.radhe.world"
+      NEXT_PUBLIC_API_URL: "https://api.radhe.space"
       NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME}
       # add others as needed
     depends_on:
       - backend
     labels:
-      # Host-based routing (example: www.radhe.world)
+      # Host-based routing (example: www.radhe.space)
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`www.radhe.world`)"
+      - "traefik.http.routers.frontend.rule=Host(`www.radhe.space`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-      - "traefik.http.routers.frontend_insecure.rule=Host(`www.radhe.world`)"
+      - "traefik.http.routers.frontend_insecure.rule=Host(`www.radhe.space`)"
       - "traefik.http.routers.frontend_insecure.entrypoints=web"
       - "traefik.http.routers.frontend_insecure.middlewares=redirect-to-https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
