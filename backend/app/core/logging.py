@@ -22,41 +22,30 @@ class AsyncOpenSearchHandler(logging.Handler):
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
 
+        client_kwargs = {
+            'hosts': [{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
+            'timeout': 30,
+            'retry_on_timeout': True,
+            'max_retries': 3
+        }
+        
+        # Production configuration
         if settings.ENVIRONMENT.lower() == 'production':
-            # Production configuration
-            client_kwargs = {
-                'hosts': [f'https://{settings.OPENSEARCH_HOST}:{settings.OPENSEARCH_PORT}'],
-                'timeout': 30,
-                'retry_on_timeout': True,
-                'max_retries': 3,
+            client_kwargs.update({
                 'use_ssl': True,
-                'verify_certs': True, 
-                'ssl_show_warn': False,
+                'verify_certs': True,
                 'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD),
-                'http_compress': True,  # Enable compression
-                'connection_class': AsyncOpenSearch.AIOHttpConnection,
-                'ssl_context': self._create_ssl_context()
-            }
+            })
         else:
             # Development configuration
-            client_kwargs = {
-                'hosts': [f'http://{settings.OPENSEARCH_HOST}:{settings.OPENSEARCH_PORT}'],
-                'timeout': 30,
-                'retry_on_timeout': True,
-                'max_retries': 3,
+            client_kwargs.update({
                 'use_ssl': False,
                 'verify_certs': False,
                 'ssl_show_warn': False,
-            }
+                'http_auth': None
+            })
 
         self.client = AsyncOpenSearch(**client_kwargs)
-
-    def _create_ssl_context(self):
-        import ssl
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        return ssl_context
 
     async def log_request(self, request: Request, request_id: str):
         try:
