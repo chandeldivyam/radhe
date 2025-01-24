@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     MINIO_ROOT_PASSWORD: str
     MINIO_HOST: str
     MINIO_PORT: str
+    MINIO_URL: Optional[str] = None
+    MINIO_CONSOLE_URL: Optional[str] = None
 
     # Redis
     REDIS_HOST: str
@@ -52,6 +54,7 @@ class Settings(BaseSettings):
     FLOWER_PORT: int = 5555
     FLOWER_USER: str
     FLOWER_PASSWORD: str
+    FLOWER_URL: Optional[str] = None
 
     # Frontend
     NEXT_PUBLIC_API_URL: str
