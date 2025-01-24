@@ -6,7 +6,6 @@ from opensearchpy import AsyncOpenSearch
 from app.core.config import settings
 from fastapi import Request
 import asyncio
-import ssl
 
 class AsyncOpenSearchHandler(logging.Handler):
     def __init__(self):
@@ -32,11 +31,6 @@ class AsyncOpenSearchHandler(logging.Handler):
         
         # Production configuration
         if settings.ENVIRONMENT.lower() == 'production':
-            ssl_context = ssl.create_default_context()
-            if not settings.OPENSEARCH_VERIFY_CERTS:
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-
             client_kwargs.update({
                 'use_ssl': True,
                 'verify_certs': False,
