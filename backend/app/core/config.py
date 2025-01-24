@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import validator
 import json
@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # OpenSearch
     OPENSEARCH_HOST: str
     OPENSEARCH_PORT: str
+    # optional
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: Optional[str] = None
+    OPENSEARCH_DASHBOARD_URL: Optional[str] = None
+    OPENSEARCH_URL: Optional[str] = None
 
     # Flower
     ENABLE_FLOWER: bool = False
@@ -51,6 +55,10 @@ class Settings(BaseSettings):
 
     # Frontend
     NEXT_PUBLIC_API_URL: str
+
+    # Traefik
+    DOMAIN_NAME: Optional[str] = None
+    ACME_EMAIL: Optional[str] = None
 
     class Config:
         case_sensitive = True
