@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     DOMAIN_NAME: Optional[str] = None
     ACME_EMAIL: Optional[str] = None
 
+    # Environment
+    ENVIRONMENT: str = "development"
+
     class Config:
         case_sensitive = True
         env_file = ".env"

@@ -6,6 +6,7 @@ from opensearchpy import AsyncOpenSearch
 from app.core.config import settings
 from fastapi import Request
 import asyncio
+import ssl
 
 class AsyncOpenSearchHandler(logging.Handler):
     def __init__(self):
@@ -21,17 +22,36 @@ class AsyncOpenSearchHandler(logging.Handler):
     def _initialize_client(self):
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
+
+        client_kwargs = {
+            'hosts': [{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
+            'timeout': 30,
+            'retry_on_timeout': True,
+            'max_retries': 3
+        }
         
-        self.client = AsyncOpenSearch(
-            hosts=[{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
-            http_auth=None,
-            use_ssl=False,
-            verify_certs=False,
-            ssl_show_warn=False,
-            timeout=30,
-            retry_on_timeout=True,
-            max_retries=3
-        )
+        # Production configuration
+        if settings.ENVIRONMENT.lower() == 'production':
+            ssl_context = ssl.create_default_context()
+            if not settings.OPENSEARCH_VERIFY_CERTS:
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+            client_kwargs.update({
+                'use_ssl': True,
+                'verify_certs': False,
+                'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_PASSWORD),
+            })
+        else:
+            # Development configuration
+            client_kwargs.update({
+                'use_ssl': False,
+                'verify_certs': False,
+                'ssl_show_warn': False,
+                'http_auth': None
+            })
+
+        self.client = AsyncOpenSearch(**client_kwargs)
 
     async def log_request(self, request: Request, request_id: str):
         try:
