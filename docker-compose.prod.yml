@@ -78,6 +78,9 @@ services:
       - "traefik.http.routers.opensearchdash.tls.certresolver=myresolver"
       - "traefik.http.services.opensearchdash.loadbalancer.server.port=5601"
 
+  ###########################################################################
+  # 4. POSTGRES
+  ###########################################################################
   db:
     image: pgvector/pgvector:pg16
     container_name: postgres
@@ -104,3 +107,4 @@ networks:
 volumes:
   traefik:
   opensearch_data:
+  postgres_data:
