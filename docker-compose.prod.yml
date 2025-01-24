@@ -106,6 +106,8 @@ services:
     build:
       context: .
       dockerfile: docker/prod/backend.dockerfile
+    env_file:
+      - .env.prod
     restart: unless-stopped
     depends_on:
       - db
@@ -165,6 +167,8 @@ services:
       dockerfile: docker/prod/backend.dockerfile
     command: celery -A celery_worker worker --loglevel=info
     restart: unless-stopped
+    env_file:
+      - .env.prod
     depends_on:
       - redis
       - backend
@@ -180,6 +184,8 @@ services:
       dockerfile: docker/prod/backend.dockerfile
     command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
     restart: unless-stopped
+    env_file:
+      - .env.prod
     depends_on:
       - redis
       - celery_worker
