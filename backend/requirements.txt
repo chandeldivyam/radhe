@@ -18,3 +18,4 @@ opensearch-py[async]
 aiohttp
 minio
 flower
+gunicorn
