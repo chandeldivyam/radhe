@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     OPENSEARCH_HOST: str
     OPENSEARCH_PORT: str
     # optional
+    OPENSEARCH_USER: Optional[str] = None
     OPENSEARCH_INITIAL_ADMIN_PASSWORD: Optional[str] = None
     OPENSEARCH_DASHBOARD_URL: Optional[str] = None
     OPENSEARCH_URL: Optional[str] = None

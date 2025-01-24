@@ -34,7 +34,7 @@ class AsyncOpenSearchHandler(logging.Handler):
             client_kwargs.update({
                 'use_ssl': True,
                 'verify_certs': False,
-                'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_PASSWORD),
+                'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD),
             })
         else:
             # Development configuration
