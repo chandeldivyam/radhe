@@ -33,7 +33,7 @@ class AsyncOpenSearchHandler(logging.Handler):
         if settings.ENVIRONMENT.lower() == 'production':
             client_kwargs.update({
                 'use_ssl': True,
-                'verify_certs': False,
+                'verify_certs': True,
                 'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD),
             })
         else:
