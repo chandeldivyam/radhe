@@ -15,7 +15,6 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       # Let’s Encrypt/ACME config:
-      - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
       - --certificatesresolvers.myresolver.acme.httpchallenge=true
       - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}
@@ -103,23 +102,22 @@ services:
   ###########################################################################
   # 5. BACKEND API
   ###########################################################################
-  # backend:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/prod/backend.dockerfile
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - db
-  #     - redis
-  #     - opensearch
-  #   networks:
-  #     - app_network
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN_NAME}`)"
-  #     - "traefik.http.routers.backend.entrypoints=websecure"
-  #     - "traefik.http.routers.backend.tls.certresolver=myresolver"
-  #     - "traefik.http.services.backend.loadbalancer.server.port=8000"
+  backend:
+    build:
+      context: .
+      dockerfile: docker/prod/backend.dockerfile
+    depends_on:
+      - db
+      - redis
+      - opensearch
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   ###########################################################################
   # 6. REDIS
