@@ -54,6 +54,17 @@ resource "aws_instance" "app" {
               apt-get update
               apt-get upgrade -y
 
+              # Create and enable swap
+              fallocate -l 6G /swapfile
+              chmod 600 /swapfile
+              mkswap /swapfile
+              swapon /swapfile
+              echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+
+              # Set swappiness
+              echo 'vm.swappiness=10' | tee -a /etc/sysctl.conf
+              sysctl -p
+
               # Install required packages
               apt-get install -y \
                 apt-transport-https \
