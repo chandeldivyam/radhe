@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# Add initial delay to allow database to start
-echo "Waiting for 5 seconds before attempting database connection..."
-sleep 5
+# Check if required environment variables are set
+if [ -z "$POSTGRES_PASSWORD" ] || [ -z "$POSTGRES_HOST" ] || [ -z "$POSTGRES_USER" ] || [ -z "$POSTGRES_DB" ]; then
+    echo "Error: Required database environment variables are not set"
+    echo "Please ensure POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_USER and POSTGRES_DB are set"
+    exit 1
+fi
 
 # Wait for database to be ready
 until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
