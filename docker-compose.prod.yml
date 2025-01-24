@@ -107,7 +107,8 @@ services:
       context: .
       dockerfile: docker/prod/backend.dockerfile
     depends_on:
-      - db
+      - db:
+        condition: service_healthy
       - redis
       - opensearch
     networks:
