@@ -102,25 +102,23 @@ services:
   ###########################################################################
   # 5. BACKEND API
   ###########################################################################
-  backend:
-    build:
-      context: .
-      dockerfile: docker/prod/backend.dockerfile
-    env_file:
-      - .env.prod
-    restart: unless-stopped
-    depends_on:
-      - db
-      - redis
-      - opensearch
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/prod/backend.dockerfile
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - db
+  #     - redis
+  #     - opensearch
+  #   networks:
+  #     - app_network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN_NAME}`)"
+  #     - "traefik.http.routers.backend.entrypoints=websecure"
+  #     - "traefik.http.routers.backend.tls.certresolver=myresolver"
+  #     - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   ###########################################################################
   # 6. REDIS
@@ -148,12 +146,12 @@ services:
     labels:
       - "traefik.enable=true"
       # API
-      - "traefik.http.routers.minio-api.rule=Host(`s3.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.minio-api.rule=Host(`${MINIO_URL}`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
       # Console
-      - "traefik.http.routers.minio-console.rule=Host(`s3-console.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_URL}`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
       - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
@@ -161,42 +159,42 @@ services:
   ###########################################################################
   # 8. CELERY WORKER
   ###########################################################################
-  celery_worker:
-    build:
-      context: .
-      dockerfile: docker/prod/backend.dockerfile
-    command: celery -A celery_worker worker --loglevel=info
-    restart: unless-stopped
-    env_file:
-      - .env.prod
-    depends_on:
-      - redis
-      - backend
-    networks:
-      - app_network
+  # celery_worker:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/prod/backend.dockerfile
+  #   command: celery -A celery_worker worker --loglevel=info
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env.prod
+  #   depends_on:
+  #     - redis
+  #     - backend
+  #   networks:
+  #     - app_network
 
   ###########################################################################
   # 9. FLOWER (Optional, you might want to disable in prod)
   ###########################################################################
-  flower:
-    build:
-      context: .
-      dockerfile: docker/prod/backend.dockerfile
-    command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
-    restart: unless-stopped
-    env_file:
-      - .env.prod
-    depends_on:
-      - redis
-      - celery_worker
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.flower.rule=Host(`flower.${DOMAIN_NAME}`)"
-      - "traefik.http.routers.flower.entrypoints=websecure"
-      - "traefik.http.routers.flower.tls.certresolver=myresolver"
-      - "traefik.http.services.flower.loadbalancer.server.port=5555"
+  # flower:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/prod/backend.dockerfile
+  #   command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env.prod
+  #   depends_on:
+  #     - redis
+  #     - celery_worker
+  #   networks:
+  #     - app_network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.flower.rule=Host(`${FLOWER_URL}`)"
+  #     - "traefik.http.routers.flower.entrypoints=websecure"
+  #     - "traefik.http.routers.flower.tls.certresolver=myresolver"
+  #     - "traefik.http.services.flower.loadbalancer.server.port=5555"
 
 networks:
   app_network:
