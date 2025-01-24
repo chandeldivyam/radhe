@@ -183,25 +183,25 @@ services:
   ###########################################################################
   # 9. FLOWER (Optional, you might want to disable in prod)
   ###########################################################################
-  flower:
-    build:
-      context: .
-      dockerfile: docker/prod/backend.dockerfile
-    command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on:
-      - redis
-      - celery_worker
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.flower.rule=Host(`${FLOWER_URL}`)"
-      - "traefik.http.routers.flower.entrypoints=websecure"
-      - "traefik.http.routers.flower.tls.certresolver=myresolver"
-      - "traefik.http.services.flower.loadbalancer.server.port=5555"
+  # flower:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/prod/backend.dockerfile
+  #   command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+  #   restart: unless-stopped
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - redis
+  #     - celery_worker
+  #   networks:
+  #     - app_network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.flower.rule=Host(`${FLOWER_URL}`)"
+  #     - "traefik.http.routers.flower.entrypoints=websecure"
+  #     - "traefik.http.routers.flower.tls.certresolver=myresolver"
+  #     - "traefik.http.services.flower.loadbalancer.server.port=5555"
 
 networks:
   app_network:
