@@ -24,7 +24,6 @@ services:
       - "443:443"
     volumes:
       - ./traefik/acme.json:/acme.json
-      - ./traefik/traefik.yml:/traefik.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - app_network
@@ -33,7 +32,7 @@ services:
   # 2. OPENSEARCH WITH SECURITY
   ###########################################################################
   opensearch:
-    image: opensearchproject/opensearch:2.18
+    image: opensearchproject/opensearch:2
     container_name: opensearch
     restart: unless-stopped
     environment:
@@ -55,7 +54,7 @@ services:
       - app_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.opensearch.rule=Host(`opensearch.radhe.space`)"
+      - "traefik.http.routers.opensearch.rule=Host(`${OPENSEARCH_URL}`)"
       - "traefik.http.routers.opensearch.entrypoints=websecure"
       - "traefik.http.routers.opensearch.tls.certresolver=myresolver"
       - "traefik.http.services.opensearch.loadbalancer.server.port=9200"
@@ -64,7 +63,7 @@ services:
   # 3. OPENSEARCH DASHBOARDS
   ###########################################################################
   opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2.18
+    image: opensearchproject/opensearch-dashboards:2
     container_name: opensearch-dashboards
     environment:
       - OPENSEARCH_HOSTS=["https://opensearch:9200"]
@@ -74,7 +73,7 @@ services:
       - app_network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.opensearchdash.rule=Host(`opensearchdashboard.radhe.space`)"
+      - "traefik.http.routers.opensearchdash.rule=Host(`${OPENSEARCH_DASHBOARD_URL}`)"
       - "traefik.http.routers.opensearchdash.entrypoints=websecure"
       - "traefik.http.routers.opensearchdash.tls.certresolver=myresolver"
       - "traefik.http.services.opensearchdash.loadbalancer.server.port=5601"
