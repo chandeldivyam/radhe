@@ -23,7 +23,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./traefik/acme.json:/acme.json
+      - traefik:/etc/traefik
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - app_network
@@ -83,4 +83,5 @@ networks:
     driver: bridge
 
 volumes:
+  traefik:
   opensearch_data:
