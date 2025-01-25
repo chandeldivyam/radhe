@@ -142,13 +142,8 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - ./.env.frontend:/app/.env.local
     ports:
       - "3124:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
     depends_on:
       - backend
     networks:
