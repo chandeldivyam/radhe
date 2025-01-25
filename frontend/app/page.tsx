@@ -30,6 +30,7 @@ function TestComponent() {
       const data = await res.json()
       setResponse(JSON.stringify(data, null, 2))
     } catch (error) {
+      console.error(error)
       setResponse('Error connecting to API')
     }
     setLoading(false)
