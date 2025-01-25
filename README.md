@@ -38,6 +38,7 @@ ssh -i ~/.ssh/radhe-prod.pem ubuntu@12.87.11.11
 
 # How to run the production mode
 
+0. After getting into the aws ec2
 1. Create a .env file in root directory -- Check .env.example for reference
 2. Create a .env.production file in frontend directory -- Check frontend/.env.example for reference
 3. Run the docker compose file
