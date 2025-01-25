@@ -26,11 +26,19 @@ function TestComponent() {
   const testConnection = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/organizations/test`)
+      // Log the API URL for debugging
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL)
+      
+      // Ensure we have a base URL, fallback to empty string if undefined
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+      const url = `${baseUrl}/api/v1/organizations/test`
+      
+      console.log('Making request to:', url)
+      const res = await fetch(url)
       const data = await res.json()
       setResponse(JSON.stringify(data, null, 2))
     } catch (error) {
-      console.error(error)
+      console.error('API Error:', error)
       setResponse('Error connecting to API')
     }
     setLoading(false)
