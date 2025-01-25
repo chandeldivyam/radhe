@@ -21,17 +21,31 @@ class AsyncOpenSearchHandler(logging.Handler):
     def _initialize_client(self):
         logging.getLogger('opensearch').setLevel(logging.WARNING)
         logging.getLogger('elastic_transport').setLevel(logging.WARNING)
+
+        client_kwargs = {
+            'hosts': [{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
+            'timeout': 30,
+            'retry_on_timeout': True,
+            'max_retries': 3
+        }
         
-        self.client = AsyncOpenSearch(
-            hosts=[{'host': settings.OPENSEARCH_HOST, 'port': int(settings.OPENSEARCH_PORT)}],
-            http_auth=None,
-            use_ssl=False,
-            verify_certs=False,
-            ssl_show_warn=False,
-            timeout=30,
-            retry_on_timeout=True,
-            max_retries=3
-        )
+        # Production configuration
+        if settings.ENVIRONMENT.lower() == 'production':
+            client_kwargs.update({
+                'use_ssl': True,
+                'verify_certs': False,
+                'http_auth': (settings.OPENSEARCH_USER, settings.OPENSEARCH_INITIAL_ADMIN_PASSWORD),
+            })
+        else:
+            # Development configuration
+            client_kwargs.update({
+                'use_ssl': False,
+                'verify_certs': False,
+                'ssl_show_warn': False,
+                'http_auth': None
+            })
+
+        self.client = AsyncOpenSearch(**client_kwargs)
 
     async def log_request(self, request: Request, request_id: str):
         try:

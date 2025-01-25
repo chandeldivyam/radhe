@@ -1,0 +1,233 @@
+version: "3.8"
+
+services:
+  ###########################################################################
+  # 1. TRAEFIK REVERSE PROXY
+  ###########################################################################
+  traefik:
+    image: "traefik:v3.3"
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Let's Encrypt/ACME config:
+      - --certificatesresolvers.myresolver.acme.httpchallenge=true
+      # - --certificatesresolvers.myresolver.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.myresolver.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/etc/traefik/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - traefik:/etc/traefik
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app_network
+
+  ###########################################################################
+  # 2. OPENSEARCH WITH SECURITY
+  ###########################################################################
+  opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: opensearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+      # If you have custom config files:
+      # - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
+      # - ./opensearch/config/internal_users.yml:/usr/share/opensearch/plugins/opensearch-security/securityconfig/internal_users.yml
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opensearch.rule=Host(`${OPENSEARCH_URL}`)"
+      - "traefik.http.routers.opensearch.entrypoints=websecure"
+      - "traefik.http.routers.opensearch.tls.certresolver=myresolver"
+      - "traefik.http.services.opensearch.loadbalancer.server.port=9200"
+
+  ###########################################################################
+  # 3. OPENSEARCH DASHBOARDS
+  ###########################################################################
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2
+    container_name: opensearch-dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["https://opensearch:9200"]
+    depends_on:
+      - opensearch
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opensearchdash.rule=Host(`${OPENSEARCH_DASHBOARD_URL}`)"
+      - "traefik.http.routers.opensearchdash.entrypoints=websecure"
+      - "traefik.http.routers.opensearchdash.tls.certresolver=myresolver"
+      - "traefik.http.services.opensearchdash.loadbalancer.server.port=5601"
+
+  ###########################################################################
+  # 4. POSTGRES
+  ###########################################################################
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  ###########################################################################
+  # 5. BACKEND API
+  ###########################################################################
+  backend:
+    build:
+      context: .
+      dockerfile: docker/prod/backend.dockerfile
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      opensearch:
+        condition: service_started
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+
+  ###########################################################################
+  # 6. REDIS
+  ###########################################################################
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  ###########################################################################
+  # 7. MINIO
+  ###########################################################################
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      # API
+      - "traefik.http.routers.minio-api.rule=Host(`${MINIO_URL}`)"
+      - "traefik.http.routers.minio-api.entrypoints=websecure"
+      - "traefik.http.routers.minio-api.tls.certresolver=myresolver"
+      - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-api.service=minio-api"
+      # Console
+      - "traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_URL}`)"
+      - "traefik.http.routers.minio-console.entrypoints=websecure"
+      - "traefik.http.routers.minio-console.tls.certresolver=myresolver"
+      - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+      - "traefik.http.routers.minio-console.service=minio-console"
+
+  ###########################################################################
+  # 8. CELERY WORKER
+  ###########################################################################
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/prod/backend.dockerfile
+    command: celery -A celery_worker worker --loglevel=info
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - app_network
+
+  ###########################################################################
+  # 9. FLOWER (Optional, you might want to disable in prod)
+  ###########################################################################
+  flower:
+    build:
+      context: .
+      dockerfile: docker/prod/backend.dockerfile
+    command: celery -A celery_worker flower --port=5555 --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - celery_worker
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flower.rule=Host(`${FLOWER_URL}`)"
+      - "traefik.http.routers.flower.entrypoints=websecure"
+      - "traefik.http.routers.flower.tls.certresolver=myresolver"
+      - "traefik.http.services.flower.loadbalancer.server.port=5555"
+
+  ###########################################################################
+  # 10. FRONTEND
+  ###########################################################################
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/prod/frontend.dockerfile
+    restart: unless-stopped
+    networks:
+      - app_network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`app.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  traefik:
+  opensearch_data:
+  postgres_data:
+  minio_data:
