@@ -68,7 +68,7 @@ services:
       - discovery.type=single-node
       - "DISABLE_SECURITY_PLUGIN=true"  # For development only
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=LongPass123!
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     ports:
