@@ -89,7 +89,7 @@ services:
     container_name: postgres
     restart: unless-stopped
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /mnt/postgres_data/pgdata:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -143,7 +143,7 @@ services:
     image: minio/minio
     restart: unless-stopped
     volumes:
-      - minio_data:/data
+      - /mnt/minio_data:/data
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}

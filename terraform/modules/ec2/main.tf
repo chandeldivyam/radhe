@@ -54,6 +54,29 @@ resource "aws_instance" "app" {
               apt-get update
               apt-get upgrade -y
 
+              # Format and mount PostgreSQL volume if not already formatted
+              if [ ! -b /dev/sdf1 ]; then
+                mkfs -t ext4 /dev/sdf
+              fi
+              mkdir -p /mnt/postgres_data
+              mount /dev/sdf /mnt/postgres_data
+              echo '/dev/sdf /mnt/postgres_data ext4 defaults,nofail 0 2' >> /etc/fstab
+
+              # Format and mount MinIO volume if not already formatted
+              if [ ! -b /dev/sdg1 ]; then
+                mkfs -t ext4 /dev/sdg
+              fi
+              mkdir -p /mnt/minio_data
+              mount /dev/sdg /mnt/minio_data
+              echo '/dev/sdg /mnt/minio_data ext4 defaults,nofail 0 2' >> /etc/fstab
+
+              # Set correct permissions
+              mkdir -p /mnt/postgres_data/pgdata
+              chown -R 1000:1000 /mnt/postgres_data/pgdata
+              chmod 700 /mnt/postgres_data/pgdata
+
+              chown -R 1000:1000 /mnt/minio_data
+
               # Create and enable swap
               fallocate -l 6G /swapfile
               chmod 600 /swapfile
@@ -103,3 +126,42 @@ resource "aws_instance" "app" {
     Environment = var.environment
   }
 }
+
+# EBS volume for PostgreSQL
+resource "aws_ebs_volume" "postgres_data" {
+    availability_zone = aws_instance.app.availability_zone
+    size             = 20  # Size in GB
+    type             = "gp3"
+    encrypted        = true
+  
+    tags = {
+      Name        = "${var.project_name}-postgres-data"
+      Environment = var.environment
+    }
+  }
+  
+  resource "aws_volume_attachment" "postgres_data" {
+    device_name = "/dev/sdf"
+    volume_id   = aws_ebs_volume.postgres_data.id
+    instance_id = aws_instance.app.id
+  }
+  
+
+  # EBS volume for MinIO
+  resource "aws_ebs_volume" "minio_data" {
+    availability_zone = aws_instance.app.availability_zone
+    size             = 200  # Size in GB
+    type             = "gp3"
+    encrypted        = true
+  
+    tags = {
+      Name        = "${var.project_name}-minio-data"
+      Environment = var.environment
+    }
+  }
+  
+  resource "aws_volume_attachment" "minio_data" {
+    device_name = "/dev/sdg"
+    volume_id   = aws_ebs_volume.minio_data.id
+    instance_id = aws_instance.app.id
+  }
