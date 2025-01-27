@@ -150,7 +150,7 @@ resource "aws_ebs_volume" "postgres_data" {
   # EBS volume for MinIO
   resource "aws_ebs_volume" "minio_data" {
     availability_zone = aws_instance.app.availability_zone
-    size             = 200  # Size in GB
+    size             = 50  # Size in GB
     type             = "gp3"
     encrypted        = true
   
