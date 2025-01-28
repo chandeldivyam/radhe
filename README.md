@@ -39,9 +39,12 @@ ssh -i ~/.ssh/radhe-prod.pem ubuntu@12.87.11.11
 # How to run the production mode
 
 0. After getting into the aws ec2
-1. Create a .env file in root directory -- Check .env.example for reference
-2. Create a .env.production file in frontend directory -- Check frontend/.env.example for reference
-3. Run the docker compose file
+1. Create relevant A records for the domain. For ease, we can create A record with * to point to the IP address of the instance. We can check this by using the command `dig +short app.domain.com` -> this should point to the IP address of the instance.
+2. Clone the repo: `https://github.com/chandeldivyam/radhe.git`
+3. `cd radhe`
+4. Create a .env file in root directory -- Check .env.example for reference
+5. Create a .env.production file in frontend directory -- Check frontend/.env.example for reference
+6. Run the docker compose file
 ```
 docker-compose -f docker-compose.prod.yml up --build -d
 ```
