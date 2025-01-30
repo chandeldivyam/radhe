@@ -19,6 +19,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      opensearch:
+        condition: service_started
     networks:
       - app_network
 
@@ -66,9 +68,13 @@ services:
     image: opensearchproject/opensearch:2
     environment:
       - discovery.type=single-node
-      - "DISABLE_SECURITY_PLUGIN=true"  # For development only
-      - "DISABLE_INSTALL_DEMO_CONFIG=true"
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+      - cluster.name=radhe-dev
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - DISABLE_SECURITY_PLUGIN=true
+      - logger.level=ERROR
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     ports:
@@ -83,12 +89,6 @@ services:
         hard: 65536
     networks:
       - app_network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2
@@ -98,8 +98,7 @@ services:
       - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
       - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true"
     depends_on:
-      opensearch:
-        condition: service_healthy
+      - opensearch
     networks:
       - app_network
   
