@@ -1,5 +1,5 @@
 'use client';
-// ./frontend/app/page.tsx
+
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useState } from 'react';
