@@ -1,0 +1,52 @@
+# Next.js build output
+.next
+out
+
+# Node modules
+node_modules
+
+# Coverage directory
+coverage
+
+# Build files
+build
+dist
+
+# Cache
+.cache
+.eslintcache
+
+# Environment files
+.env*
+!.env.example
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript cache
+*.tsbuildinfo
+
+# PWA files
+public/sw.js
+public/workbox-*.js
+
+# Root config files
+/*.config.js
+/*.config.ts
+/*.config.mjs
+/*.config.cjs
+/postcss.config.*
+/tailwind.config.*
+/tsconfig.*
+/jest.config.*
+/babel.config.*
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+/pnpm-*.yaml
+/package.json
+
+# Misc
+.DS_Store
+*.pem 
