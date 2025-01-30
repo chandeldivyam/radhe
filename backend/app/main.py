@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import organizations, users, files
 from app.core.logging import setup_logging
 import logging
 import time
 import uuid
+from app.api.v1.organization import router as organization_router
+from app.api.v1.auth import router as auth_router
 
 # Setup logging
 logger, opensearch_handler = setup_logging()
@@ -54,10 +55,6 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Include routers
-app.include_router(organizations.router, prefix="/api/v1", tags=["organizations"])
-app.include_router(users.router, prefix="/api/v1", tags=["users"])
-app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application starting up")
@@ -70,3 +67,16 @@ async def shutdown_event():
 def read_root():
     logger.info("Root endpoint accessed")
     return {"message": "Welcome to the radhe-backend"}
+
+# Include routers
+app.include_router(
+    organization_router,
+    prefix="/api/v1",
+    tags=["organizations"]
+)
+
+app.include_router(
+    auth_router,
+    prefix="/api/v1",
+    tags=["auth"]
+)
