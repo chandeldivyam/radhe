@@ -1,0 +1,93 @@
+.command-wrapper {
+	--command-background: var(--popover);
+	--command-foreground: var(--popover-foreground);
+	--command-border: var(--border);
+
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border-radius: var(--radius);
+	background-color: hsl(var(--command-background));
+	color: hsl(var(--command-foreground));
+}
+
+.command-input-wrapper {
+	display: flex;
+	align-items: center;
+	padding: 0.75rem;
+	border-bottom: 1px solid hsl(var(--command-border));
+}
+
+.command-input {
+	flex: 1;
+	height: 40px;
+	background: transparent;
+	padding: 0 0.75rem;
+	font-size: 0.875rem;
+	outline: none;
+	border: none;
+}
+
+.command-input::placeholder {
+	color: hsl(var(--muted-foreground));
+}
+
+.command-list {
+	max-height: min(400px, calc(var(--cmdk-list-height)));
+	overflow-y: auto;
+	overflow-x: hidden;
+	scroll-padding-block-start: 8px;
+	scroll-padding-block-end: 8px;
+	transition: height 100ms ease;
+}
+
+.command-empty,
+.command-loading {
+	padding: 1.5rem;
+	text-align: center;
+	font-size: 0.875rem;
+	color: hsl(var(--muted-foreground));
+}
+
+.command-group {
+	padding: 0.5rem;
+}
+
+[cmdk-group-heading] {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: hsl(var(--muted-foreground));
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.command-item {
+	position: relative;
+	display: flex;
+	cursor: pointer;
+	align-items: center;
+	padding: 0.75rem 0.75rem;
+	font-size: 0.875rem;
+	border-radius: var(--radius-sm);
+	gap: 0.75rem;
+	user-select: none;
+	transition: all 150ms ease;
+	outline: none;
+}
+
+.command-item[data-selected='true'] {
+	background-color: hsl(var(--accent));
+	color: hsl(var(--accent-foreground));
+}
+
+.command-item[data-disabled='true'] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Add smooth height transition */
+[cmdk-list] {
+	height: var(--cmdk-list-height);
+	transition: height 100ms ease;
+}
