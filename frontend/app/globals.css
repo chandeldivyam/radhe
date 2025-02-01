@@ -33,6 +33,12 @@ body {
 		--chart-4: 43 74% 66%;
 		--chart-5: 27 87% 67%;
 		--radius: 0.5rem;
+		--gradient-start: 230 100% 65%; /* Bright blue */
+		--gradient-middle: 280 100% 65%; /* Vibrant purple */
+		--gradient-end: 330 100% 65%; /* Bright pink */
+		--gradient-blur: 1px; /* Slightly increased blur */
+		--gradient-opacity: 0.85; /* Increased opacity */
+		--gradient-animation-duration: 3s;
 	}
 	.dark {
 		--background: 240 10% 3.9%;
@@ -59,6 +65,9 @@ body {
 		--chart-3: 30 80% 55%;
 		--chart-4: 280 65% 60%;
 		--chart-5: 340 75% 55%;
+		--gradient-start: 231 48% 48%;
+		--gradient-middle: 271 68% 63%;
+		--gradient-end: 326 54% 64%;
 	}
 }
 
@@ -68,5 +77,21 @@ body {
 	}
 	body {
 		@apply bg-background text-foreground;
+	}
+}
+
+@layer components {
+	.gradient-border {
+		@apply absolute -inset-0.5 rounded-lg blur opacity-75 transition-all animate-pulse;
+		background: linear-gradient(
+			to right,
+			hsl(var(--gradient-start)),
+			hsl(var(--gradient-middle)),
+			hsl(var(--gradient-end))
+		);
+		filter: blur(var(--gradient-blur));
+		opacity: var(--gradient-opacity);
+		animation: pulse var(--gradient-animation-duration)
+			cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 }
