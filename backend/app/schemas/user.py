@@ -4,24 +4,16 @@ from typing import Optional
 
 class UserBase(BaseModel):
     email: EmailStr
+    organization_id: int
 
 class UserCreate(UserBase):
     password: str
-    organization_id: Optional[str] = None
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
 class User(UserBase):
-    id: str
-    organization_id: str
+    id: int
     is_active: bool
-    created_at: Optional[datetime] = None
+    created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
-
-class UserInDB(User):
-    hashed_password: str
