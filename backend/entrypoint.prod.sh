@@ -14,7 +14,10 @@ until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER"
 done
 
 echo "Applying database migrations..."
-alembic upgrade head
+if ! alembic upgrade head; then
+    echo "Error: Database migrations failed. Server will not start."
+    exit 1
+fi
 
 # Start the application with production server (using gunicorn)
 exec gunicorn app.main:app \
