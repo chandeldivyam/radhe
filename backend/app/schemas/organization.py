@@ -1,19 +1,18 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
 
 class OrganizationBase(BaseModel):
     name: str
+    slug: str
 
 class OrganizationCreate(OrganizationBase):
-    admin_email: EmailStr
-    admin_password: str
+    pass
 
 class Organization(OrganizationBase):
-    id: str
-    created_at: Optional[datetime] = None
+    id: int
+    created_at: datetime
     updated_at: Optional[datetime] = None
-    is_active: bool
 
     class Config:
         from_attributes = True
