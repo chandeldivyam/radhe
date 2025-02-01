@@ -64,9 +64,6 @@ function TestComponent() {
 	const testConnection = async () => {
 		setLoading(true);
 		try {
-			// Log the API URL for debugging
-			console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
-
 			// Ensure we have a base URL, fallback to empty string if undefined
 			const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 			const url = `${baseUrl}/api/v1/organizations/test`;
