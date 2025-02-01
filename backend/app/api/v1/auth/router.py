@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from app.db.base import get_db
 from app.schemas.auth import Token, RefreshResponse
 from app.models.user import User
+from app.schemas.user import User as UserSchema
 from .service import AuthService
-from app.api.utils.deps import get_user_from_refresh_token
+from app.api.utils.deps import get_user_from_refresh_token, get_current_user
 import logging
 
 router = APIRouter(prefix="/auth")
@@ -45,3 +46,10 @@ async def refresh_token(
     """
     access_token = await AuthService.refresh_access_token(current_user.id)
     return RefreshResponse(access_token=access_token)
+
+@router.get("/me", response_model=UserSchema)
+async def get_me(
+    current_user: User = Depends(get_current_user),
+):
+    """Get the current user"""
+    return current_user

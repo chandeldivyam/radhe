@@ -17,3 +17,8 @@ class Organization(OrganizationBase):
 
     class Config:
         from_attributes = True
+
+class OrganizationWithAuth(Organization):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
