@@ -7,6 +7,7 @@ import time
 import uuid
 from app.api.v1.organization import router as organization_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.user import router as user_router
 
 # Setup logging
 logger, opensearch_handler = setup_logging()
@@ -79,4 +80,10 @@ app.include_router(
     auth_router,
     prefix="/api/v1",
     tags=["auth"]
+)
+
+app.include_router(
+    user_router,
+    prefix="/api/v1",
+    tags=["users"]
 )

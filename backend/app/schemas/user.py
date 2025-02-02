@@ -15,6 +15,7 @@ class UserLogin(BaseModel):
 
 class User(UserBase):
     id: str
+    email: EmailStr
     organization_id: str
     is_active: bool
     created_at: Optional[datetime] = None
@@ -25,3 +26,7 @@ class User(UserBase):
 
 class UserInDB(User):
     hashed_password: str
+
+class UserAddByAdmin(BaseModel):
+    email: EmailStr
+    password: str
