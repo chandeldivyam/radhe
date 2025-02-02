@@ -24,6 +24,7 @@ export async function POST() {
 		);
 
 		if (!response.ok) {
+			console.log('Token refresh failed', response);
 			return NextResponse.json(
 				{ error: 'Token refresh failed' },
 				{ status: response.status }
@@ -40,7 +41,8 @@ export async function POST() {
 			maxAge: 30 * 60, // 30 minutes
 		});
 
-		return NextResponse.json({ success: true });
+		// Return the new access token to the client
+		return NextResponse.json({ access_token: data.access_token });
 	} catch (error) {
 		console.error('Refresh error:', error);
 		return NextResponse.json(

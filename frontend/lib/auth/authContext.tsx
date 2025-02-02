@@ -68,14 +68,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 	// Token refresh logic
 	const refreshAccessToken = useCallback(async () => {
-		const newAccessToken = await refreshTokens();
-		if (!newAccessToken) {
+		try {
+			const newAccessToken = await refreshTokens();
+			if (!newAccessToken) {
+				dispatch({ type: 'LOGOUT' });
+				router.push('/login');
+				return false;
+			}
+			return true;
+		} catch (error) {
+			console.error('Token refresh failed:', error);
 			dispatch({ type: 'LOGOUT' });
 			router.push('/login');
 			return false;
 		}
-		return true;
-	}, [router]);
+	}, [router, dispatch]);
 
 	// Setup token refresh interval
 	useEffect(() => {

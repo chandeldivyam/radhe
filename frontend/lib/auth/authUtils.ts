@@ -23,10 +23,17 @@ export const refreshTokens = async (): Promise<string | null> => {
 		});
 
 		if (!response.ok) {
+			console.error('Failed to refresh token', response);
 			throw new Error('Failed to refresh token');
 		}
 
 		const data = await response.json();
+		
+		if (!data.access_token) {
+			console.error('No access token in refresh response');
+			throw new Error('Invalid refresh response');
+		}
+
 		return data.access_token;
 	} catch (error) {
 		console.error('Token refresh failed:', error);
