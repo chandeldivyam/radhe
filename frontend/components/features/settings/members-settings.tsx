@@ -14,14 +14,19 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { DeleteMemberDialog } from '@/components/features/settings/delete-member-dialog';
 import type { Member } from '@/types/member';
+
 export function MembersSettings() {
 	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 	const { user } = useAuth();
 	const { members, isLoading, deleteMember, addMember } = useMembers();
 	const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+
+	// Create an array to render multiple skeleton rows
+	const skeletonRows = Array.from({ length: 3 });
 
 	return (
 		<div className="space-y-6">
@@ -44,14 +49,19 @@ export function MembersSettings() {
 					</TableHeader>
 					<TableBody>
 						{isLoading ? (
-							<TableRow>
-								<TableCell
-									colSpan={3}
-									className="text-center h-24"
-								>
-									Loading...
-								</TableCell>
-							</TableRow>
+							skeletonRows.map((_, index) => (
+								<TableRow key={index}>
+									<TableCell>
+										<Skeleton className="w-full h-4" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="w-full h-4" />
+									</TableCell>
+									<TableCell>
+										<Skeleton className="h-8 w-8" />
+									</TableCell>
+								</TableRow>
+							))
 						) : (
 							members?.map((member) => (
 								<TableRow key={member.id}>
@@ -68,9 +78,7 @@ export function MembersSettings() {
 											<Button
 												variant="ghost"
 												size="icon"
-												onClick={() =>
-													setMemberToDelete(member)
-												}
+												onClick={() => setMemberToDelete(member)}
 											>
 												<Trash2 className="h-4 w-4 text-destructive" />
 											</Button>

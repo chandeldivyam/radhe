@@ -8,15 +8,7 @@ export function GeneralSettings() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium">Organization Settings</h3>
-        <p className="text-sm text-muted-foreground">
-          View your organization details
-        </p>
-      </div>
-
-      <Card>
+    <Card>
         <CardHeader>
           <CardTitle>Organization Information</CardTitle>
         </CardHeader>
@@ -31,6 +23,5 @@ export function GeneralSettings() {
           </div>
         </CardContent>
       </Card>
-    </div>
   );
 } 
