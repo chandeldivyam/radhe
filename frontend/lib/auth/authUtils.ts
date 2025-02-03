@@ -28,7 +28,7 @@ export const refreshTokens = async (): Promise<string | null> => {
 		}
 
 		const data = await response.json();
-		
+
 		if (!data.access_token) {
 			console.error('No access token in refresh response');
 			throw new Error('Invalid refresh response');
