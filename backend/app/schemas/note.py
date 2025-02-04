@@ -17,6 +17,8 @@ class NoteUpdate(BaseModel):
 
 class NoteMoveRequest(BaseModel):
     new_parent_id: Optional[str] = None
+    before_id: Optional[str] = None  # Note ID to position before
+    after_id: Optional[str] = None   # Note ID to position after
 
 class NoteResponse(NoteBase):
     id: str
@@ -26,13 +28,8 @@ class NoteResponse(NoteBase):
     updated_at: Optional[datetime]
     path: str
     depth: int
-    has_children: bool = False
-    children: List['NoteResponse'] = []
-
-    @field_validator('has_children', mode='before')
-    @classmethod
-    def set_has_children(cls, v, values):
-        return bool(values.get('children', []))
+    children_count: int
+    position: int
 
     class Config:
         from_attributes = True
@@ -46,3 +43,19 @@ class RootNotesResponse(BaseModel):
 
 # This is needed for the recursive type reference in children
 NoteResponse.model_rebuild()
+
+class NoteListResponse(BaseModel):
+    id: str
+    title: str
+    organization_id: str
+    created_by: str
+    created_at: datetime
+    updated_at: Optional[datetime]
+    path: str
+    depth: int
+    children_count: int
+    position: int
+    parent_id: Optional[str]
+
+    class Config:
+        from_attributes = True

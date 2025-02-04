@@ -6,7 +6,8 @@ from app.schemas.note import (
     NoteCreate, 
     NoteUpdate, 
     NoteResponse, 
-    NoteMoveRequest
+    NoteMoveRequest,
+    NoteListResponse
 )
 from app.api.utils.deps import get_current_user
 from app.api.v1.note.service import NoteService
@@ -23,7 +24,7 @@ async def create_note(
     current_user = Depends(get_current_user)
 ):
     try:
-        return await NoteService.create_note(db, note_data, current_user.id)
+        return await NoteService.create_note(db, note_data, current_user.id, current_user.organization_id)
     except Exception as e:
         logger.error(f"Error creating note: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while creating the note")
@@ -50,7 +51,6 @@ async def list_root_notes(
             detail="An error occurred while listing root notes"
         )
 
-
 @router.get("/{note_id}", response_model=NoteResponse)
 async def get_note(
     note_id: str,
@@ -63,17 +63,6 @@ async def get_note(
         logger.error(f"Error getting note: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while getting the note")
 
-@router.get("/", response_model=List[NoteResponse])
-async def list_notes(
-    parent_id: Optional[str] = None,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    try:
-        return await NoteService.list_notes(db, current_user.organization_id, parent_id)
-    except Exception as e:
-        logger.error(f"Error listing notes: {str(e)}")
-        raise HTTPException(status_code=500, detail="An error occurred while listing the notes")
 
 @router.put("/{note_id}", response_model=NoteResponse)
 async def update_note(
@@ -100,20 +89,18 @@ async def delete_note(
         logger.error(f"Error deleting note: {str(e)}")
         raise HTTPException(status_code=500, detail="An error occurred while deleting the note")
 
-@router.get("/{note_id}/children", response_model=List[NoteResponse])
+@router.get("/{note_id}/children", response_model=List[NoteListResponse])
 async def get_children(
     note_id: str,
-    depth: int = Query(default=1, ge=1, le=5),
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get children of a specific note up to specified depth"""
+    """Get immediate children of a specific note"""
     try:
         return await NoteService.get_children(
             db, 
             note_id, 
-            current_user.organization_id,
-            depth
+            current_user.organization_id
         )
     except Exception as e:
         logger.error(f"Error getting note children: {str(e)}")

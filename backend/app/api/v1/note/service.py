@@ -1,11 +1,15 @@
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional, Tuple
 from app.models.note import Note
-from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse
 import uuid
 from sqlalchemy import update, func, and_, or_
 
 class NoteService:
+    POSITION_GAP = 1000  # Gap between positions
+    MIN_GAP = 100  # Minimum gap before rebalancing
+    MAX_POSITION = 2147483647  # Max value for INTEGER in PostgreSQL
+    
     @staticmethod
     async def create_note(
         db: Session,
@@ -25,6 +29,13 @@ class NoteService:
                 # Increment parent's children count
                 parent.children_count += 1
         
+        # Calculate position for the new note (always append to end)
+        position = await NoteService.calculate_position(
+            db,
+            parent_id=note_data.parent_id,
+            organization_id=organization_id
+        )
+        
         db_note = Note(
             id=note_id,
             title=note_data.title,
@@ -34,7 +45,8 @@ class NoteService:
             created_by=user_id,
             path=path,
             depth=depth,
-            children_count=0
+            children_count=0,
+            position=position  # Set the calculated position
         )
         
         db.add(db_note)
@@ -55,12 +67,6 @@ class NoteService:
                 Note.id == note_id,
                 Note.organization_id == organization_id
             )
-            .options(
-                selectinload(Note.children).load_only(
-                    Note.id,
-                    Note.children_count
-                )
-            )
             .first()
         )
         
@@ -68,28 +74,8 @@ class NoteService:
             return None
         
         note_response = NoteResponse.model_validate(note)
-        note_response.has_children = note.children_count > 0
         
         return note_response
-
-    @staticmethod
-    async def list_notes(
-        db: Session,
-        organization_id: str,
-        parent_id: Optional[str] = None
-    ) -> List[NoteResponse]:
-        query = db.query(Note).filter(
-            Note.organization_id == organization_id
-        )
-        
-        if parent_id:
-            query = query.filter(Note.parent_id == parent_id)
-        else:
-            # Get root level notes (no parent)
-            query = query.filter(Note.parent_id.is_(None))
-            
-        notes = query.order_by(Note.created_at.desc()).all()
-        return [NoteResponse.model_validate(note) for note in notes]
 
     @staticmethod
     async def update_note(
@@ -146,10 +132,10 @@ class NoteService:
         skip: int = 0,
         limit: int = 20
     ) -> Tuple[List[NoteResponse], int]:
-        total = db.query(Note).filter(
+        total = db.query(func.count(Note.id)).filter(
             Note.organization_id == organization_id,
             Note.parent_id.is_(None)
-        ).count()
+        ).scalar()
         
         root_notes = (
             db.query(Note)
@@ -157,17 +143,13 @@ class NoteService:
                 Note.organization_id == organization_id,
                 Note.parent_id.is_(None)
             )
-            .order_by(Note.created_at.desc())
+            .order_by(Note.position.asc())
             .offset(skip)
             .limit(limit)
             .all()
         )
         
-        response_notes = []
-        for note in root_notes:
-            note_response = NoteResponse.model_validate(note)
-            note_response.has_children = note.children_count > 0
-            response_notes.append(note_response)
+        response_notes = [NoteResponse.model_validate(note) for note in root_notes]
         
         return response_notes, total
 
@@ -176,33 +158,22 @@ class NoteService:
         db: Session,
         note_id: str,
         organization_id: str,
-        depth: int = 1
-    ) -> List[NoteResponse]:
-        """Get children of a specific note up to specified depth"""
-        if depth < 1:
-            return []
-            
-        # Get immediate children
-        children = db.query(Note).filter(
-            Note.parent_id == note_id,
-            Note.organization_id == organization_id
-        ).all()
+    ) -> List[NoteListResponse]:
+        """Get immediate children of a specific note without content"""
+        children = (
+            db.query(Note.id, Note.title, Note.organization_id, 
+                    Note.created_by, Note.created_at, Note.updated_at,
+                    Note.path, Note.depth, Note.children_count, 
+                    Note.position, Note.parent_id)
+            .filter(
+                Note.parent_id == note_id,
+                Note.organization_id == organization_id
+            )
+            .order_by(Note.position.asc())
+            .all()
+        )
         
-        response_children = []
-        for child in children:
-            child_response = NoteResponse.model_validate(child)
-            
-            # If depth > 1, recursively get next level of children
-            if depth > 1:
-                child_response.children = await NoteService.get_children(
-                    db, 
-                    child.id, 
-                    organization_id, 
-                    depth - 1
-                )
-            response_children.append(child_response)
-            
-        return response_children
+        return [NoteListResponse.model_validate(child) for child in children]
 
     @staticmethod
     async def move_note(
@@ -211,7 +182,7 @@ class NoteService:
         move_data: NoteMoveRequest,
         organization_id: str
     ) -> Optional[NoteResponse]:
-        """Move a note to a new parent or to root level"""
+        """Move a note to a new parent or reposition"""
         note = db.query(Note).filter(
             Note.id == note_id,
             Note.organization_id == organization_id
@@ -220,42 +191,107 @@ class NoteService:
         if not note:
             return None
             
-        # Prevent circular references
-        if move_data.new_parent_id:
-            parent = db.query(Note).filter(
-                Note.id == move_data.new_parent_id,
-                Note.organization_id == organization_id
-            ).first()
-            
-            if not parent or parent.path.startswith(f"{note.path}."):
-                return None
-                
-        old_path = note.path
+        # Calculate new position
+        new_position = await NoteService.calculate_position(
+            db,
+            move_data.new_parent_id,
+            move_data.before_id,
+            move_data.after_id,
+            organization_id
+        )
         
-        # Calculate new path
-        if move_data.new_parent_id:
-            parent = db.query(Note).filter(Note.id == move_data.new_parent_id).first()
-            new_path = f"{parent.path}.{note.id}"
-            new_depth = parent.depth + 1
-        else:
-            new_path = note.id
-            new_depth = 0
-            
-        # Update all descendants
-        descendants = db.query(Note).filter(
-            Note.path.like(f"{old_path}.%")
-        ).all()
-        
-        for descendant in descendants:
-            descendant.path = descendant.path.replace(old_path, new_path, 1)
-            descendant.depth = descendant.depth - note.depth + new_depth
-            
-        # Update the note itself
+        # Update note
+        note.position = new_position
         note.parent_id = move_data.new_parent_id
-        note.path = new_path
-        note.depth = new_depth
+        
+        # Only recalculate paths if parent changed
+        if note.parent_id != move_data.new_parent_id:
+            await NoteService._update_note_path(db, note, move_data.new_parent_id)
         
         db.commit()
         db.refresh(note)
         
         return NoteResponse.model_validate(note)
+
+    @staticmethod
+    async def calculate_position(
+        db: Session,
+        parent_id: Optional[str],
+        before_id: Optional[str] = None,
+        after_id: Optional[str] = None,
+        organization_id: str = None
+    ) -> int:
+        """Calculate new position for a note"""
+        if before_id is None and after_id is None:
+            # If no reference points, put at the end
+            last_note = (
+                db.query(Note)
+                .filter(
+                    Note.parent_id == parent_id,
+                    Note.organization_id == organization_id
+                )
+                .order_by(Note.position.desc())
+                .first()
+            )
+            return (last_note.position + NoteService.POSITION_GAP) if last_note else NoteService.POSITION_GAP
+            
+        if before_id is None:
+            # Put before the first item
+            after_note = db.query(Note).filter(Note.id == after_id).first()
+            new_position = after_note.position // 2
+            
+            # Check if we need to rebalance
+            if new_position < NoteService.MIN_GAP:
+                await NoteService._rebalance_positions(db, parent_id, organization_id)
+                # Recalculate after rebalancing
+                return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
+            return new_position
+            
+        if after_id is None:
+            # Put after the last item
+            before_note = db.query(Note).filter(Note.id == before_id).first()
+            new_position = before_note.position + NoteService.POSITION_GAP
+            
+            # Check if we're approaching max integer
+            if new_position > NoteService.MAX_POSITION - NoteService.MIN_GAP:
+                await NoteService._rebalance_positions(db, parent_id, organization_id)
+                # Recalculate after rebalancing
+                return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
+            return new_position
+            
+        # Position between two notes
+        before_note = db.query(Note).filter(Note.id == before_id).first()
+        after_note = db.query(Note).filter(Note.id == after_id).first()
+        gap = before_note.position - after_note.position
+        
+        # If gap is too small, rebalance
+        if abs(gap) < NoteService.MIN_GAP:
+            await NoteService._rebalance_positions(db, parent_id, organization_id)
+            # Recalculate after rebalancing
+            return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
+            
+        return (before_note.position + after_note.position) // 2
+
+    @staticmethod
+    async def _rebalance_positions(
+        db: Session,
+        parent_id: Optional[str],
+        organization_id: str
+    ) -> None:
+        """Rebalance positions of all siblings"""
+        # Get all siblings in current order
+        siblings = (
+            db.query(Note)
+            .filter(
+                Note.parent_id == parent_id,
+                Note.organization_id == organization_id
+            )
+            .order_by(Note.position)
+            .all()
+        )
+        
+        # Reassign positions with large gaps
+        for i, note in enumerate(siblings):
+            note.position = (i + 1) * NoteService.POSITION_GAP
+        
+        db.commit()

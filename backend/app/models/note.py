@@ -16,18 +16,19 @@ class Note(Base):
     path = Column(String, index=True)  # Materialized path for efficient traversal
     depth = Column(Integer, default=0)  # Nesting level
     children_count = Column(Integer, default=0)  # Add this column
+    position = Column(Integer, nullable=False, default=0)  # For ordering siblings
     
     # Metadata
     organization_id = Column(String, ForeignKey("organization.id"), index=True)
     created_by = Column(String, ForeignKey("user.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Fix the self-referential relationship
     children = relationship(
         "Note",
         backref=backref('parent', remote_side=[id]),
-        lazy='select',  # Change to select for better control
+        lazy='noload',  # Don't load by default
         cascade="all, delete-orphan"
     )
     
