@@ -128,9 +128,15 @@ async def move_note(
         if not note:
             raise HTTPException(
                 status_code=404,
-                detail="Note not found or invalid move operation"
+                detail="Note not found"
             )
         return note
+    except ValueError as e:
+        logger.error(f"Invalid move operation: {str(e)}")
+        raise HTTPException(
+            status_code=400,
+            detail=str(e)
+        )
     except Exception as e:
         logger.error(f"Error moving note: {str(e)}")
         raise HTTPException(

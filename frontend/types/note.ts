@@ -37,3 +37,11 @@ export interface UpdateNoteData {
   title?: string;
   content?: string;
 }
+
+export interface MoveNoteAction {
+  noteId: string;
+  oldParentId: string | null;
+  newParentId: string | null;
+  beforeId?: string;
+  afterId?: string;
+}

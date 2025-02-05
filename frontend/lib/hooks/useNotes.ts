@@ -52,15 +52,18 @@ export function useNotes() {
         throw new Error('Failed to load notes');
       }
       
-      const [notes, total] = await response.json();
+      const data = await response.json();
+      const [notes, total] = Array.isArray(data) ? data : [[], 0];
       
+      // Always set root notes, even if empty
       if (page === 0) {
         actions.setRootNotes(notes);
-      } else {
+      } else if (notes.length > 0) {
         actions.setRootNotes([...store.rootNotes, ...notes]);
       }
       
-      actions.setHasMoreRootNotes(store.rootNotes.length < total);
+      // Update pagination state
+      actions.setHasMoreRootNotes(total > (page + 1) * ITEMS_PER_PAGE);
       actions.setCurrentPage(page);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load notes';
@@ -239,6 +242,49 @@ export function useNotes() {
     }
   }, [store, toast]);
 
+  const moveNote = useCallback(async (noteId: string, moveData: {
+    newParentId: string | null;
+    beforeId?: string;
+    afterId?: string;
+  }) => {
+    try {
+      console.log('moveData', moveData);
+      const response = await fetch(`/api/notes/${noteId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          new_parent_id: moveData.newParentId,
+          before_id: moveData.beforeId,
+          after_id: moveData.afterId,
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to move note');
+      
+      const updatedNote = await response.json();
+      store.moveNote({
+        noteId,
+        oldParentId: store.currentNote?.parent_id ?? null,
+        ...moveData
+      });
+      
+      toast({
+        title: "Success",
+        description: "Note moved successfully",
+      });
+      
+      return updatedNote;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to move note';
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [store, toast]);
+
   return {
     loadRootNotes,
     loadChildren,
@@ -250,5 +296,6 @@ export function useNotes() {
     deleteNote,
     error: store.error,
     isLoadingRoot: store.isLoadingRoot,
+    moveNote,
   };
 } 

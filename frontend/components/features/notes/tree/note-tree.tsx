@@ -3,9 +3,11 @@
 import { useNotesStore } from '@/lib/store/useNotesStore';
 import { useNotes } from '@/lib/hooks/useNotes';
 import { TreeNode } from './tree-node';
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { NoteListItem } from '@/types/note';
+import { DndContext, DragEndEvent } from '@dnd-kit/core';
+import { DropIndicator } from './drop-indicator';
 
 interface NoteTreeProps {
   width: number;
@@ -26,14 +28,18 @@ export function NoteTree({ width, height }: NoteTreeProps) {
     isLoadingMore
   } = useNotesStore();
 
-  const { loadRootNotes, loadChildren } = useNotes();
+  const { loadRootNotes, loadChildren, moveNote } = useNotes();
 
-  // Load initial root notes - with proper dependency array
+  // Add a ref to track initial load
+  const initialLoadRef = useRef(false);
+
+  // Modified useEffect
   useEffect(() => {
-    if (!isLoadingRoot && rootNotes.length === 0) {
+    if (!initialLoadRef.current && !isLoadingRoot) {
+      initialLoadRef.current = true;
       loadRootNotes(0);
     }
-  }, [isLoadingRoot, rootNotes.length, loadRootNotes]);
+  }, [isLoadingRoot, loadRootNotes]);
 
   // Handle node expansion - memoized with proper dependencies
   const handleToggle = useCallback(async (noteId: string) => {
@@ -60,7 +66,8 @@ export function NoteTree({ width, height }: NoteTreeProps) {
     return notes.map((note, index) => {
       const isLast = index === notes.length - 1;
       return (
-        <div key={note.id}>
+        <div key={note.id} className="relative">
+          <DropIndicator id={note.id} level={level} />
           <TreeNode
             note={note}
             level={level}
@@ -69,12 +76,9 @@ export function NoteTree({ width, height }: NoteTreeProps) {
             onToggle={handleToggle}
           />
           {expandedNodes.has(note.id) && childrenMap[note.id] && (
-            <div>
+            <div className="ml-4">
               {renderNoteTree(childrenMap[note.id], level + 1)}
             </div>
-          )}
-          {isLast && level === 0 && hasMoreRootNotes && (
-            <div ref={loadMoreRef} className="h-4" />
           )}
         </div>
       );
@@ -97,9 +101,58 @@ export function NoteTree({ width, height }: NoteTreeProps) {
     return renderNoteTree(rootNotes);
   }, [isLoadingRoot, rootNotes, renderNoteTree]);
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+    
+    const dropType = (over.id as string).split('-').pop() as 'before' | 'inside';
+    const overId = (over.id as string).slice(0, -(dropType.length) - 1);
+    
+    const sourceNote = rootNotes.find(n => n.id === active.id) || 
+      Object.values(childrenMap).flat().find(n => n.id === active.id);
+    
+    const targetNote = rootNotes.find(n => n.id === overId) ||
+      Object.values(childrenMap).flat().find(n => n.id === overId);
+
+    if (!sourceNote || !targetNote) return;
+
+    // Prevent dropping a parent into its own descendant
+    const isDescendant = (parentId: string | null, childId: string): boolean => {
+      if (!parentId) return false;
+      if (parentId === childId) return true;
+      const children = childrenMap[parentId] || [];
+      return children.some(child => isDescendant(child.id, childId));
+    };
+
+    if (isDescendant(active.id as string, overId)) {
+      console.error('Cannot move a parent into its own descendant');
+      return;
+    }
+
+    try {
+      if (dropType === 'inside') {
+        // Drop inside the target note
+        await moveNote(active.id as string, {
+          newParentId: overId
+        });
+      } else {
+        // Drop before the target note, using its parent
+        await moveNote(active.id as string, {
+          newParentId: targetNote.parent_id,
+          beforeId: overId
+        });
+      }
+    } catch (error) {
+      console.error('Failed to move note:', error);
+    }
+  };
+
   return (
-    <div style={{ width, height }} className="overflow-auto">
-      {renderedTree}
-    </div>
+    <DndContext onDragEnd={handleDragEnd}>
+      <div style={{ width, height }} className="overflow-auto">
+        {renderedTree}
+      </div>
+    </DndContext>
   );
 }

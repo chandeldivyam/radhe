@@ -2,7 +2,7 @@
 
 import { NoteListItem } from '@/types/note';
 import { useNotesStore } from '@/lib/store/useNotesStore';
-import { ChevronRight, FileText, Loader2, Plus } from 'lucide-react';
+import { ChevronRight, FileText, Loader2, Plus, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -10,6 +10,7 @@ import { CreateNoteDialog } from '../dialogs/create-note-dialog';
 import { useNotes } from '@/lib/hooks/useNotes';
 import { NoteMenu } from './note-menu';
 import { useRouter } from 'next/navigation';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 interface TreeNodeProps {
   note: NoteListItem;
@@ -29,6 +30,29 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { loadChildren, deleteNote } = useNotes();
 
+  const { attributes, listeners, setNodeRef: setDraggableRef, transform } = useDraggable({
+    id: note.id,
+    data: {
+      note,
+      type: 'note'
+    }
+  });
+
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
+    id: `${note.id}-inside`,
+    data: {
+      type: 'inside',
+      parentId: note.id,
+      level
+    }
+  });
+
+  // Combine the refs
+  const setRefs = (element: HTMLDivElement | null) => {
+    setDroppableRef(element);
+    setDraggableRef(element);
+  };
+
   // Load children when expanded and not loaded yet
   useEffect(() => {
     if (isExpanded && !loadedChildrenNodes.has(note.id) && note.children_count > 0) {
@@ -44,10 +68,18 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
   return (
     <>
       <div
-        style={{ paddingLeft: `${level * 12}px` }}
+        ref={setRefs}
+        style={{ 
+          paddingLeft: `${level * 12}px`,
+          ...transform ? {
+            transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+          } : undefined
+        }}
         className={cn(
-          'flex items-center gap-1 px-2 py-1 hover:bg-accent/50 rounded-sm cursor-pointer group',
-          isSelected && 'bg-accent'
+          'flex items-center gap-1 px-2 py-1 rounded-sm cursor-pointer group',
+          'hover:bg-accent/50',
+          isSelected && 'bg-accent',
+          isOver && 'bg-primary/20'
         )}
         onClick={handleClick}
       >
@@ -74,6 +106,14 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
             )
           )}
         </Button>
+
+        <div 
+          {...attributes} 
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-accent/50 rounded-sm"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+        </div>
 
         <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="text-sm truncate min-w-0 flex-1">{note.title}</span>

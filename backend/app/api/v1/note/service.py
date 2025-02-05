@@ -217,21 +217,40 @@ class NoteService:
         if not note:
             return None
             
+        # Prevent moving a note to its own descendant
+        if move_data.new_parent_id:
+            potential_parent = db.query(Note).filter(Note.id == move_data.new_parent_id).first()
+            if potential_parent and potential_parent.path.startswith(f"{note.path}."):
+                raise ValueError("Cannot move a note to its own descendant")
+        
+        # Update old parent's children count
+        if note.parent_id:
+            old_parent = db.query(Note).filter(Note.id == note.parent_id).first()
+            if old_parent:
+                old_parent.children_count -= 1
+        
+        # Update new parent's children count
+        if move_data.new_parent_id:
+            new_parent = db.query(Note).filter(Note.id == move_data.new_parent_id).first()
+            if new_parent:
+                new_parent.children_count += 1
+        
         # Calculate new position
         new_position = await NoteService.calculate_position(
             db,
-            move_data.new_parent_id,
-            move_data.before_id,
-            move_data.after_id,
-            organization_id
+            parent_id=move_data.new_parent_id,
+            before_id=move_data.before_id,
+            after_id=move_data.after_id,
+            organization_id=organization_id
         )
         
         # Update note
         note.position = new_position
+        old_parent_id = note.parent_id
         note.parent_id = move_data.new_parent_id
         
         # Only recalculate paths if parent changed
-        if note.parent_id != move_data.new_parent_id:
+        if old_parent_id != move_data.new_parent_id:
             await NoteService._update_note_path(db, note, move_data.new_parent_id)
         
         db.commit()
@@ -261,42 +280,78 @@ class NoteService:
             )
             return (last_note.position + NoteService.POSITION_GAP) if last_note else NoteService.POSITION_GAP
             
-        if before_id is None:
-            # Put before the first item
-            after_note = db.query(Note).filter(Note.id == after_id).first()
-            new_position = after_note.position // 2
-            
-            # Check if we need to rebalance
-            if new_position < NoteService.MIN_GAP:
-                await NoteService._rebalance_positions(db, parent_id, organization_id)
-                # Recalculate after rebalancing
-                return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
-            return new_position
-            
         if after_id is None:
-            # Put after the last item
+            # Put before the specified note
             before_note = db.query(Note).filter(Note.id == before_id).first()
-            new_position = before_note.position + NoteService.POSITION_GAP
+            if not before_note:
+                raise ValueError("Reference note not found")
             
-            # Check if we're approaching max integer
-            if new_position > NoteService.MAX_POSITION - NoteService.MIN_GAP:
+            # Find the note immediately before our reference note
+            prev_note = (
+                db.query(Note)
+                .filter(
+                    Note.parent_id == parent_id,
+                    Note.organization_id == organization_id,
+                    Note.position < before_note.position
+                )
+                .order_by(Note.position.desc())
+                .first()
+            )
+            
+            if not prev_note:
+                return before_note.position // 2
+            
+            new_position = (prev_note.position + before_note.position) // 2
+            
+            if abs(before_note.position - prev_note.position) < NoteService.MIN_GAP:
                 await NoteService._rebalance_positions(db, parent_id, organization_id)
-                # Recalculate after rebalancing
                 return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
+            
             return new_position
             
-        # Position between two notes
+        if before_id is None:
+            # Put after the specified note
+            after_note = db.query(Note).filter(Note.id == after_id).first()
+            if not after_note:
+                raise ValueError("Reference note not found")
+            
+            # Find the note immediately after our reference note
+            next_note = (
+                db.query(Note)
+                .filter(
+                    Note.parent_id == parent_id,
+                    Note.organization_id == organization_id,
+                    Note.position > after_note.position
+                )
+                .order_by(Note.position.asc())
+                .first()
+            )
+            
+            if not next_note:
+                return after_note.position + NoteService.POSITION_GAP
+            
+            new_position = (after_note.position + next_note.position) // 2
+            
+            if abs(next_note.position - after_note.position) < NoteService.MIN_GAP:
+                await NoteService._rebalance_positions(db, parent_id, organization_id)
+                return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
+            
+            return new_position
+        
+        # Position between two specific notes
         before_note = db.query(Note).filter(Note.id == before_id).first()
         after_note = db.query(Note).filter(Note.id == after_id).first()
-        gap = before_note.position - after_note.position
         
-        # If gap is too small, rebalance
-        if abs(gap) < NoteService.MIN_GAP:
+        if not before_note or not after_note:
+            raise ValueError("Reference notes not found")
+        
+        new_position = (before_note.position + after_note.position) // 2
+        
+        if abs(before_note.position - after_note.position) < NoteService.MIN_GAP:
             await NoteService._rebalance_positions(db, parent_id, organization_id)
-            # Recalculate after rebalancing
             return await NoteService.calculate_position(db, parent_id, before_id, after_id, organization_id)
-            
-        return (before_note.position + after_note.position) // 2
+        
+        return new_position
 
     @staticmethod
     async def _rebalance_positions(
@@ -321,6 +376,45 @@ class NoteService:
             note.position = (i + 1) * NoteService.POSITION_GAP
         
         db.commit()
+
+    @staticmethod
+    async def _update_note_path(
+        db: Session,
+        note: Note,
+        new_parent_id: Optional[str]
+    ) -> None:
+        """Update the path and depth of a note and all its descendants"""
+        if new_parent_id:
+            parent = db.query(Note).filter(Note.id == new_parent_id).first()
+            if parent:
+                new_path = f"{parent.path}.{note.id}"
+                new_depth = parent.depth + 1
+            else:
+                new_path = note.id
+                new_depth = 0
+        else:
+            new_path = note.id
+            new_depth = 0
+        
+        # Calculate path difference to update descendants
+        old_path_prefix = f"{note.path}."
+        new_path_prefix = f"{new_path}."
+        depth_difference = new_depth - note.depth
+        
+        # Update descendants' paths and depths
+        descendants = (
+            db.query(Note)
+            .filter(Note.path.like(f"{old_path_prefix}%"))
+            .all()
+        )
+        
+        for descendant in descendants:
+            descendant.path = new_path_prefix + descendant.path[len(old_path_prefix):]
+            descendant.depth = descendant.depth + depth_difference
+        
+        # Update the note itself
+        note.path = new_path
+        note.depth = new_depth
 
     @staticmethod
     async def patch_note(
