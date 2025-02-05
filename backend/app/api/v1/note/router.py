@@ -7,7 +7,8 @@ from app.schemas.note import (
     NoteUpdate, 
     NoteResponse, 
     NoteMoveRequest,
-    NoteListResponse
+    NoteListResponse,
+    NoteDetailResponse
 )
 from app.api.utils.deps import get_current_user
 from app.api.v1.note.service import NoteService
@@ -51,7 +52,7 @@ async def list_root_notes(
             detail="An error occurred while listing root notes"
         )
 
-@router.get("/{note_id}", response_model=NoteResponse)
+@router.get("/{note_id}", response_model=NoteDetailResponse)
 async def get_note(
     note_id: str,
     db: Session = Depends(get_db),
@@ -135,4 +136,27 @@ async def move_note(
         raise HTTPException(
             status_code=500,
             detail="An error occurred while moving the note"
+        )
+
+@router.patch("/{note_id}", response_model=NoteResponse)
+async def patch_note(
+    note_id: str,
+    note_data: dict,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Partially update a note with specific fields"""
+    try:
+        return await NoteService.patch_note(
+            db, 
+            note_id, 
+            note_data, 
+            current_user.id, 
+            current_user.organization_id
+        )
+    except Exception as e:
+        logger.error(f"Error patching note: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail="An error occurred while patching the note"
         )

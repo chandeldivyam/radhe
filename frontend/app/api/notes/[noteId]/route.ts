@@ -7,6 +7,8 @@ export async function GET(
   { params }: { params: { noteId: string } }
 ) {
   try {
+    const awaitedParams = await params;
+
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('access_token');
 
@@ -19,7 +21,7 @@ export async function GET(
     }
 
     const response = await fetch(
-      `${process.env.API_URL}/api/v1/notes/${params.noteId}`,
+      `${process.env.API_URL}/api/v1/notes/${awaitedParams.noteId}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken.value}`,
@@ -57,6 +59,7 @@ export async function PATCH(
   { params }: { params: { noteId: string } }
 ) {
   try {
+    const awaitedParams = await params;
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('access_token');
 
@@ -71,7 +74,7 @@ export async function PATCH(
     const body = await req.json();
     
     const response = await fetch(
-      `${process.env.API_URL}/api/v1/notes/${params.noteId}`,
+      `${process.env.API_URL}/api/v1/notes/${awaitedParams.noteId}`,
       {
         method: 'PATCH',
         headers: {
@@ -112,6 +115,7 @@ export async function DELETE(
   { params }: { params: { noteId: string } }
 ) {
   try {
+    const awaitedParams = await params;
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('access_token');
 
@@ -124,7 +128,7 @@ export async function DELETE(
     }
 
     const response = await fetch(
-      `${process.env.API_URL}/api/v1/notes/${params.noteId}`,
+      `${process.env.API_URL}/api/v1/notes/${awaitedParams.noteId}`,
       {
         method: 'DELETE',
         headers: {

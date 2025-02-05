@@ -13,6 +13,8 @@ interface NotesState {
   error: string | null;
   selectedNoteId: string | null;
   loadedChildrenNodes: Set<string>;
+  currentNote: Note | null;
+  isLoadingNote: boolean;
   
   // Actions
   setRootNotes: (notes: NoteListItem[]) => void;
@@ -29,6 +31,8 @@ interface NotesState {
   updateNote: (noteId: string, updates: Partial<NoteListItem>) => void;
   deleteNote: (noteId: string, parentId: string | null) => void;
   forceReloadChildren: (parentId: string) => void;
+  setCurrentNote: (note: Note | null) => void;
+  setIsLoadingNote: (isLoading: boolean) => void;
 }
 
 export const useNotesStore = create<NotesState>((set) => ({
@@ -43,6 +47,8 @@ export const useNotesStore = create<NotesState>((set) => ({
   error: null,
   selectedNoteId: null,
   loadedChildrenNodes: new Set(),
+  currentNote: null,
+  isLoadingNote: false,
 
   setRootNotes: (notes) => set({ rootNotes: notes }),
   
@@ -175,5 +181,8 @@ export const useNotesStore = create<NotesState>((set) => ({
         loadedChildrenNodes: newLoadedChildrenNodes,
         childrenMap: newChildrenMap
       };
-    })
+    }),
+
+  setCurrentNote: (note) => set({ currentNote: note }),
+  setIsLoadingNote: (isLoading) => set({ isLoadingNote: isLoading }),
 })); 

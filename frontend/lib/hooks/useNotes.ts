@@ -2,12 +2,14 @@ import { useCallback, useState, useMemo } from 'react';
 import { useNotesStore } from '@/lib/store/useNotesStore';
 import { CreateNoteData, UpdateNoteData, Note } from '@/types/note';
 import { useToast } from '@/lib/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 20;
 
 export function useNotes() {
   const store = useNotesStore();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -136,16 +138,40 @@ export function useNotes() {
   }, [store, loadChildren, toast]);
 
   const loadNote = useCallback(async (noteId: string) => {
+    // Add a ref to track if the component is still mounted
+    let isMounted = true;
+
     try {
-      setIsLoading(true);
+      // If already loading or have the correct note, don't proceed
+      if (store.isLoadingNote || (store.currentNote && store.currentNote.id === noteId)) {
+        return;
+      }
+
+      store.setIsLoadingNote(true);
       store.setError(null);
       
       const response = await fetch(`/api/notes/${noteId}`);
+      
+      // Check if unmounted
+      if (!isMounted) return;
+
+      if (response.status === 401) {
+        // Handle unauthorized at the hook level
+        router.push('/login');
+        return;
+      }
+
       if (!response.ok) throw new Error('Failed to load note');
       
       const note = await response.json();
-      setCurrentNote(note);
+      
+      // Check if unmounted again
+      if (!isMounted) return;
+      
+      store.setCurrentNote(note);
     } catch (error) {
+      if (!isMounted) return;
+      
       const message = error instanceof Error ? error.message : 'Failed to load note';
       store.setError(message);
       toast({
@@ -154,9 +180,15 @@ export function useNotes() {
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      if (isMounted) {
+        store.setIsLoadingNote(false);
+      }
     }
-  }, [store, toast]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [store, toast, router]);
 
   const updateNote = useCallback(async (noteId: string, updates: UpdateNoteData) => {
     try {
@@ -211,8 +243,8 @@ export function useNotes() {
     loadRootNotes,
     loadChildren,
     createNote,
-    currentNote,
-    isLoading,
+    currentNote: store.currentNote,
+    isLoading: store.isLoadingNote,
     loadNote,
     updateNote,
     deleteNote,

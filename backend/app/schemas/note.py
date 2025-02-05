@@ -59,3 +59,6 @@ class NoteListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class NoteDetailResponse(NoteListResponse):
+    content: str

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional, Tuple
 from app.models.note import Note
-from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse
 import uuid
 from sqlalchemy import update, func, and_, or_
 
@@ -60,7 +60,7 @@ class NoteService:
         db: Session,
         note_id: str,
         organization_id: str
-    ) -> Optional[NoteListResponse]:
+    ) -> Optional[NoteDetailResponse]:
         note = (
             db.query(Note)
             .filter(
@@ -73,7 +73,7 @@ class NoteService:
         if not note:
             return None
         
-        note_response = NoteListResponse.model_validate(note)
+        note_response = NoteDetailResponse.model_validate(note)
         
         return note_response
 
@@ -295,3 +295,47 @@ class NoteService:
             note.position = (i + 1) * NoteService.POSITION_GAP
         
         db.commit()
+
+    @staticmethod
+    async def patch_note(
+        db: Session,
+        note_id: str,
+        note_data: dict,
+        user_id: str,
+        organization_id: str
+    ) -> Optional[NoteResponse]:
+        """
+        Partially update a note with only the fields that are provided
+        """
+        note = db.query(Note).filter(
+            Note.id == note_id,
+            Note.organization_id == organization_id
+        ).first()
+        
+        if not note:
+            return None
+        
+        # Define allowed fields for patching
+        allowed_fields = {
+            'title', 'content', 'position', 'parent_id'
+        }
+        
+        # Update only provided fields that are allowed
+        for field, value in note_data.items():
+            if field in allowed_fields:
+                if field == 'parent_id' and value != note.parent_id:
+                    # Handle parent change
+                    await NoteService._update_note_path(db, note, value)
+                elif field == 'position':
+                    # Validate and set position
+                    note.position = min(
+                        max(value, 0), 
+                        NoteService.MAX_POSITION
+                    )
+                else:
+                    setattr(note, field, value)
+        
+        db.commit()
+        db.refresh(note)
+        
+        return NoteResponse.model_validate(note)
