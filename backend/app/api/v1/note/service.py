@@ -110,6 +110,18 @@ class NoteService:
         note_id: str,
         organization_id: str
     ) -> bool:
+        # First get the note to be deleted to get its parent_id
+        note = db.query(Note).filter(
+            Note.id == note_id,
+            Note.organization_id == organization_id
+        ).first()
+        
+        if not note:
+            return False
+        
+        # Store parent_id before deletion
+        parent_id = note.parent_id
+        
         # Find all notes that have a path starting with this note's ID
         notes_to_delete = db.query(Note).filter(
             Note.organization_id == organization_id,
@@ -118,10 +130,24 @@ class NoteService:
         
         if not notes_to_delete:
             return False
-            
+        
+        # Delete all the notes
         for note in notes_to_delete:
             db.delete(note)
-            
+        
+        # If there was a parent, update its children_count
+        if parent_id:
+            parent = db.query(Note).filter(Note.id == parent_id).first()
+            if parent:
+                # Count remaining children
+                remaining_children = db.query(func.count(Note.id)).filter(
+                    Note.parent_id == parent_id,
+                    Note.organization_id == organization_id,
+                    Note.id != note_id  # Exclude the note being deleted
+                ).scalar()
+                
+                parent.children_count = remaining_children
+        
         db.commit()
         return True
 

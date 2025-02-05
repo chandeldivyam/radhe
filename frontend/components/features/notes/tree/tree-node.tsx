@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import { CreateNoteDialog } from '../dialogs/create-note-dialog';
 import { useNotes } from '@/lib/hooks/useNotes';
 import { NoteMenu } from './note-menu';
+import { useRouter } from 'next/navigation';
 
 interface TreeNodeProps {
   note: NoteListItem;
@@ -19,6 +20,7 @@ interface TreeNodeProps {
 }
 
 export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNodeProps) {
+  const router = useRouter();
   const loadingStates = useNotesStore((state) => state.loadingStates);
   const expandedNodes = useNotesStore((state) => state.expandedNodes);
   const loadedChildrenNodes = useNotesStore((state) => state.loadedChildrenNodes);
@@ -34,6 +36,11 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
     }
   }, [isExpanded, note.id, note.children_count, loadedChildrenNodes, loadChildren]);
 
+  const handleClick = (e: React.MouseEvent) => {
+    onSelect(note.id);
+    router.push(`/notes/${note.id}`);
+  };
+
   return (
     <>
       <div
@@ -42,7 +49,7 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
           'flex items-center gap-1 px-2 py-1 hover:bg-accent/50 rounded-sm cursor-pointer group',
           isSelected && 'bg-accent'
         )}
-        onClick={() => onSelect(note.id)}
+        onClick={handleClick}
       >
         <Button
           variant="ghost"
