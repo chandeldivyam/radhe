@@ -14,8 +14,8 @@ export const navigationConfig: NavItem[] = [
 		icon: Home,
 	},
 	{
-		title: 'Documents',
-		href: '/documents',
+		title: 'Notes',
+		href: '/notes',
 		icon: FileText,
 	},
 	{

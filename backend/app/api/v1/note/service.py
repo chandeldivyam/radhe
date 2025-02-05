@@ -60,7 +60,7 @@ class NoteService:
         db: Session,
         note_id: str,
         organization_id: str
-    ) -> Optional[NoteResponse]:
+    ) -> Optional[NoteListResponse]:
         note = (
             db.query(Note)
             .filter(
@@ -73,7 +73,7 @@ class NoteService:
         if not note:
             return None
         
-        note_response = NoteResponse.model_validate(note)
+        note_response = NoteListResponse.model_validate(note)
         
         return note_response
 
