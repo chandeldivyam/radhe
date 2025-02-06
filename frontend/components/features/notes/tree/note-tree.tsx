@@ -102,51 +102,52 @@ export function NoteTree({ width, height }: NoteTreeProps) {
   }, [isLoadingRoot, rootNotes, renderNoteTree]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    if (!over) return;
-    
-    const dropType = (over.id as string).split('-').pop() as 'before' | 'inside';
-    const overId = (over.id as string).slice(0, -(dropType.length) - 1);
-    
-    const sourceNote = rootNotes.find(n => n.id === active.id) || 
-      Object.values(childrenMap).flat().find(n => n.id === active.id);
-    
-    const targetNote = rootNotes.find(n => n.id === overId) ||
-      Object.values(childrenMap).flat().find(n => n.id === overId);
+  const { active, over } = event;
+  if (!over) return;
 
-    if (!sourceNote || !targetNote) return;
+  // Extract the drop type and target note ID from the droppable ID.
+  const dropType = (over.id as string).split('-').pop() as 'before' | 'inside';
+  const overId = (over.id as string).slice(0, -(dropType.length) - 1);
 
-    // Prevent dropping a parent into its own descendant
-    const isDescendant = (parentId: string | null, childId: string): boolean => {
-      if (!parentId) return false;
-      if (parentId === childId) return true;
-      const children = childrenMap[parentId] || [];
-      return children.some(child => isDescendant(child.id, childId));
-    };
+  const sourceNote = rootNotes.find(n => n.id === active.id) ||
+    Object.values(childrenMap).flat().find(n => n.id === active.id);
+  const targetNote = rootNotes.find(n => n.id === overId) ||
+    Object.values(childrenMap).flat().find(n => n.id === overId);
 
-    if (isDescendant(active.id as string, overId)) {
-      console.error('Cannot move a parent into its own descendant');
-      return;
-    }
+  if (!sourceNote || !targetNote) return;
 
-    try {
-      if (dropType === 'inside') {
-        // Drop inside the target note
-        await moveNote(active.id as string, {
-          newParentId: overId
-        });
-      } else {
-        // Drop before the target note, using its parent
-        await moveNote(active.id as string, {
-          newParentId: targetNote.parent_id,
-          beforeId: overId
-        });
-      }
-    } catch (error) {
-      console.error('Failed to move note:', error);
-    }
+  // Prevent moving a note into its own descendant.
+  const isDescendant = (parentId: string | null, childId: string): boolean => {
+    if (!parentId) return false;
+    if (parentId === childId) return true;
+    const children = childrenMap[parentId] || [];
+    return children.some(child => isDescendant(child.id, childId));
   };
+
+  if (isDescendant(active.id as string, overId)) {
+    console.error('Cannot move a parent into its own descendant');
+    return;
+  }
+
+  try {
+    if (dropType === 'inside') {
+      // Auto-expand target if it is collapsed.
+      if (!expandedNodes.has(overId)) {
+        toggleExpanded(overId);
+      }
+      await moveNote(active.id as string, {
+        newParentId: overId
+      });
+    } else {
+      await moveNote(active.id as string, {
+        newParentId: targetNote.parent_id,
+        beforeId: overId
+      });
+    }
+  } catch (error) {
+    console.error('Failed to move note:', error);
+  }
+};
 
   return (
     <DndContext onDragEnd={handleDragEnd}>

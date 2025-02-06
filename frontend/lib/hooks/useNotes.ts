@@ -249,6 +249,11 @@ export function useNotes() {
   }) => {
     try {
       console.log('moveData', moveData);
+      store.moveNote({
+        noteId,
+        oldParentId: store.currentNote?.parent_id ?? null,
+        ...moveData
+      });
       const response = await fetch(`/api/notes/${noteId}/move`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -262,11 +267,6 @@ export function useNotes() {
       if (!response.ok) throw new Error('Failed to move note');
       
       const updatedNote = await response.json();
-      store.moveNote({
-        noteId,
-        oldParentId: store.currentNote?.parent_id ?? null,
-        ...moveData
-      });
       
       toast({
         title: "Success",

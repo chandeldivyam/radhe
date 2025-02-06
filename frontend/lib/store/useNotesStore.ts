@@ -190,130 +190,126 @@ export const useNotesStore = create<NotesState>((set) => ({
     set((state) => {
       const { noteId, oldParentId, newParentId, beforeId, afterId } = params;
       
-      // Helper to find note in a list
-      const findNoteInList = (notes: NoteListItem[], id: string) => 
-        notes.findIndex(note => note.id === id);
-      
-      // Helper to remove note from its current location
-      const removeNoteFromParent = (parentId: string | null) => {
+      // Helper to find and remove note from its current location
+      const findAndRemoveNote = (parentId: string | null): [NoteListItem | undefined, NotesState] => {
+        let movedNote: NoteListItem | undefined;
+        let newState = { ...state };
+
         if (!parentId) {
-          return state.rootNotes.filter(note => note.id !== noteId);
+          // Remove from root
+          movedNote = newState.rootNotes.find(note => note.id === noteId);
+          newState.rootNotes = newState.rootNotes.filter(note => note.id !== noteId);
+        } else {
+          // Remove from parent's children
+          const parentChildren = newState.childrenMap[parentId] || [];
+          movedNote = parentChildren.find(note => note.id === noteId);
+          if (movedNote) {
+            // Only update childrenMap if we found the note
+            newState.childrenMap = {
+              ...newState.childrenMap,
+              [parentId]: parentChildren.filter(note => note.id !== noteId)
+            };
+            
+            // Update old parent's children count
+            newState = updateNodeInAllLists(newState, parentId, (node) => ({
+              ...node,
+              children_count: Math.max(0, (node.children_count || 0) - 1)
+            }));
+          }
         }
-        return state.childrenMap[parentId]?.filter(note => note.id !== noteId) || [];
-      };
-      
-      // Get the note being moved
-      const getNote = () => {
-        if (!oldParentId) {
-          return state.rootNotes.find(note => note.id === noteId);
-        }
-        return state.childrenMap[oldParentId]?.find(note => note.id === noteId);
+
+        return [movedNote, newState];
       };
 
-      const updateChildrenCount = (
-        parentId: string | null, 
-        increment: boolean
-      ) => {
-        const updateCount = (notes: NoteListItem[]) =>
-          notes.map((note) =>
-            note.id === parentId
-              ? { ...note, children_count: note.children_count + (increment ? 1 : -1) }
-              : note
-          );
+      // Helper to update a node in all lists (root and children)
+      const updateNodeInAllLists = (state: NotesState, nodeId: string, updateFn: (node: NoteListItem) => NoteListItem): NotesState => {
+        const newState = { ...state };
         
-        return {
-          rootNotes: parentId ? updateCount(state.rootNotes) : state.rootNotes,
-          childrenMap: Object.entries(state.childrenMap).reduce(
-            (acc, [key, value]) => ({
-              ...acc,
-              [key]: updateCount(value)
-            }),
-            {}
-          )
-        };
+        // Update in root notes
+        newState.rootNotes = newState.rootNotes.map(note => 
+          note.id === nodeId ? updateFn(note) : note
+        );
+
+        // Update in all children lists
+        newState.childrenMap = Object.entries(newState.childrenMap).reduce(
+          (acc, [key, notes]) => ({
+            ...acc,
+            [key]: notes.map(note => note.id === nodeId ? updateFn(note) : note)
+          }),
+          {}
+        );
+
+        return newState;
       };
 
-      const movedNote = getNote();
+      // Step 1: Find and remove note from its current location
+      const [movedNote, stateAfterRemoval] = findAndRemoveNote(oldParentId);
       if (!movedNote) return state;
-      
-      // TODO: Implement the actual move logic
-      // 1. Remove note from old parent
-      // Step 1: Remove note from old parent and update children count
-      let newState = { ...state };
-      if (!oldParentId) {
-        newState.rootNotes = removeNoteFromParent(null);
-      } else {
-        newState.childrenMap = {
-          ...newState.childrenMap,
-          [oldParentId]: removeNoteFromParent(oldParentId)
-        };
-      }
 
-      if (oldParentId) {
-        const oldParentUpdate = updateChildrenCount(oldParentId, false);
-        newState.rootNotes = oldParentUpdate.rootNotes;
-        newState.childrenMap = oldParentUpdate.childrenMap;
-      }
       // Step 2: Calculate new position
       const targetNotes = !newParentId 
-      ? newState.rootNotes 
-      : newState.childrenMap[newParentId] || [];
+        ? stateAfterRemoval.rootNotes 
+        : (stateAfterRemoval.childrenMap[newParentId] || []);
 
       const newPosition = calculateNewPosition(targetNotes, beforeId, afterId);
 
-      // Step 3: Insert note in new location with updated properties
+      // Step 3: Create updated note with new parent and position
       const updatedNote = {
         ...movedNote,
         parent_id: newParentId,
         position: newPosition
       };
+
+      // Step 4: Insert note in new location
+      let newState = stateAfterRemoval;
       
       if (!newParentId) {
+        // Moving to root level
         newState.rootNotes = insertNoteAtPosition(newState.rootNotes, updatedNote, newPosition);
-      } else {
-        // If new parent doesn't exist in childrenMap, initialize it
-        if (!newState.childrenMap[newParentId]) {
-          newState.childrenMap[newParentId] = [];
-        }
         
+        // Ensure the note is removed from its old parent's children if it exists
+        if (oldParentId && newState.childrenMap[oldParentId]) {
+          newState.childrenMap = {
+            ...newState.childrenMap,
+            [oldParentId]: newState.childrenMap[oldParentId].filter(
+              note => note.id !== noteId
+            )
+          };
+        }
+      } else {
+        // Moving to a new parent
+        const parentChildren = newState.childrenMap[newParentId] || [];
         newState.childrenMap = {
           ...newState.childrenMap,
-          [newParentId]: insertNoteAtPosition(
-            newState.childrenMap[newParentId],
-            updatedNote,
-            newPosition
-          )
+          [newParentId]: insertNoteAtPosition(parentChildren, updatedNote, newPosition)
         };
+
+        // Update new parent's children count
+        newState = updateNodeInAllLists(newState, newParentId, (node) => ({
+          ...node,
+          children_count: (node.children_count || 0) + 1
+        }));
       }
 
-      // Update new parent's children count
-      if (newParentId) {
-        const newParentUpdate = updateChildrenCount(newParentId, true);
-        newState.rootNotes = newParentUpdate.rootNotes;
-          newState.childrenMap = newParentUpdate.childrenMap;
-      }
-
+      // Step 5: Handle expanded states and children reloading
       if (oldParentId !== newParentId) {
-        // If moving to a new parent that's not loaded, mark it for loading
-        if (newParentId && 
-            newState.expandedNodes.has(newParentId) && 
-            !newState.loadedChildrenNodes.has(newParentId)) {
-          newState.loadedChildrenNodes = new Set([
-            ...newState.loadedChildrenNodes,
-            newParentId
-          ]);
-        }
-  
-        // If the note has children and was expanded, maintain its expanded state
+        // If the moved note has children and was expanded
         if (movedNote.children_count > 0 && newState.expandedNodes.has(noteId)) {
-          // Keep the expanded state but mark children for reloading
+          // Keep expanded state but mark for reloading
           newState.loadedChildrenNodes = new Set(
             Array.from(newState.loadedChildrenNodes).filter(id => id !== noteId)
           );
-          // Remove children from childrenMap as they need to be reloaded
-          if (newState.childrenMap[noteId]) {
-            const { [noteId]: _, ...restChildrenMap } = newState.childrenMap;
-            newState.childrenMap = restChildrenMap;
+          // Remove children from map as they need to be reloaded
+          const { [noteId]: _, ...restChildrenMap } = newState.childrenMap;
+          newState.childrenMap = restChildrenMap;
+        }
+
+        // If moving to root, ensure the note is properly removed from old parent
+        if (!newParentId && oldParentId) {
+          // Double-check removal from old parent's children
+          if (newState.childrenMap[oldParentId]) {
+            newState.childrenMap[oldParentId] = newState.childrenMap[oldParentId]
+              .filter(note => note.id !== noteId);
           }
         }
       }
@@ -327,29 +323,39 @@ const calculateNewPosition = (
   beforeId?: string,
   afterId?: string
 ): number => {
-  if (!notes.length) return 1000;  // First note
+  // Sort notes by position for correct calculations
+  const sortedNotes = [...notes].sort((a, b) => a.position - b.position);
+  
+  if (!sortedNotes.length) return 1000;  // First note
   
   if (beforeId) {
-    const beforeNote = notes.find(n => n.id === beforeId);
-    const beforePosition = beforeNote?.position ?? 0;
-    const prevNote = notes.find(n => n.position < beforePosition);
+    const beforeIndex = sortedNotes.findIndex(n => n.id === beforeId);
+    if (beforeIndex === -1) return 1000;
+    
+    const beforeNote = sortedNotes[beforeIndex];
+    const prevNote = beforeIndex > 0 ? sortedNotes[beforeIndex - 1] : null;
+    
     return prevNote 
-      ? (beforePosition + prevNote.position) / 2 
-      : beforePosition - 1000;
+      ? (beforeNote.position + prevNote.position) / 2 
+      : beforeNote.position - 1000;
   }
   
   if (afterId) {
-    const afterNote = notes.find(n => n.id === afterId);
-    const afterPosition = afterNote?.position ?? 0;
-    const nextNote = notes.find(n => n.position > afterPosition);
+    const afterIndex = sortedNotes.findIndex(n => n.id === afterId);
+    if (afterIndex === -1) return 1000;
+    
+    const afterNote = sortedNotes[afterIndex];
+    const nextNote = afterIndex < sortedNotes.length - 1 
+      ? sortedNotes[afterIndex + 1] 
+      : null;
+    
     return nextNote 
-      ? (afterPosition + nextNote.position) / 2 
-      : afterPosition + 1000;
+      ? (afterNote.position + nextNote.position) / 2 
+      : afterNote.position + 1000;
   }
   
   // If no before/after, place at the end
-  const lastNote = [...notes].sort((a, b) => b.position - a.position)[0];
-  return lastNote ? lastNote.position + 1000 : 1000;
+  return sortedNotes[sortedNotes.length - 1].position + 1000;
 }; 
 
 const insertNoteAtPosition = (

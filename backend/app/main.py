@@ -33,8 +33,9 @@ async def log_requests(request: Request, call_next):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
-    # Log request details to OpenSearch
-    await opensearch_handler.log_request(request, request_id)
+    # Log request details to OpenSearch only in production
+    if opensearch_handler:
+        await opensearch_handler.log_request(request, request_id)
     
     # Add request ID to log context
     logger.info(

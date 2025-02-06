@@ -19,8 +19,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      opensearch:
-        condition: service_started
+      # opensearch:
+      #   condition: service_started
     networks:
       - app_network
 
@@ -87,6 +87,8 @@ services:
       nofile:
         soft: 65536
         hard: 65536
+    profiles:
+      - opensearch
     networks:
       - app_network
 
@@ -101,6 +103,8 @@ services:
       - opensearch
     networks:
       - app_network
+    profiles:
+      - opensearch-dashboards
   
   celery_worker:
     build:
