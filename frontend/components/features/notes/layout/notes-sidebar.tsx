@@ -24,11 +24,7 @@ export function NotesSidebar() {
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          <NoteTree width={232} height={800} />
-        </div>
-      </ScrollArea>
+      <NoteTree width={232} height={800} />
 
       <CreateNoteDialog
         open={isCreateDialogOpen}

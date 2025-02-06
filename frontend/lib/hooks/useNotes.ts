@@ -248,10 +248,15 @@ export function useNotes() {
     afterId?: string;
   }) => {
     try {
-      console.log('moveData', moveData);
+      const sourceNote = store.rootNotes.find(n => n.id === noteId) ||
+      Object.values(store.childrenMap).flat().find(n => n.id === noteId);
+
+      if (!sourceNote) {
+        throw new Error('Source note not found');
+      }
       store.moveNote({
         noteId,
-        oldParentId: store.currentNote?.parent_id ?? null,
+        oldParentId: sourceNote.parent_id,
         ...moveData
       });
       const response = await fetch(`/api/notes/${noteId}/move`, {

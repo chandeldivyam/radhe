@@ -4,14 +4,17 @@ import { useNotesStore } from '@/lib/store/useNotesStore';
 import { useNotes } from '@/lib/hooks/useNotes';
 import { TreeNode } from './tree-node';
 import { useEffect, useCallback, useMemo, useRef } from 'react';
-import { useInView } from 'react-intersection-observer';
 import { NoteListItem } from '@/types/note';
 import { DndContext, DragEndEvent } from '@dnd-kit/core';
 import { DropIndicator } from './drop-indicator';
+import { toast } from '@/lib/hooks/use-toast';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Loader2, ChevronDown } from "lucide-react";
 
 interface NoteTreeProps {
-  width: number;
-  height: number;
+  width: number | string;
+  height: number | string;
 }
 
 export function NoteTree({ width, height }: NoteTreeProps) {
@@ -49,18 +52,6 @@ export function NoteTree({ width, height }: NoteTreeProps) {
     }
   }, [toggleExpanded, childrenMap, expandedNodes, loadChildren]);
 
-  // Memoize the intersection observer callback
-  const handleIntersection = useCallback((inView: boolean) => {
-    if (inView && hasMoreRootNotes && !isLoadingMore && !isLoadingRoot) {
-      loadRootNotes(currentPage + 1);
-    }
-  }, [hasMoreRootNotes, isLoadingMore, isLoadingRoot, currentPage, loadRootNotes]);
-
-  // Infinite scrolling for root notes
-  const { ref: loadMoreRef } = useInView({
-    onChange: handleIntersection,
-  });
-
   // Memoize the tree rendering function
   const renderNoteTree = useCallback((notes: NoteListItem[], level: number = 0) => {
     return notes.map((note, index) => {
@@ -83,23 +74,42 @@ export function NoteTree({ width, height }: NoteTreeProps) {
         </div>
       );
     });
-  }, [
-    selectedNoteId,
-    setSelectedNoteId,
-    handleToggle,
-    expandedNodes,
-    childrenMap,
-    hasMoreRootNotes,
-    loadMoreRef
-  ]);
+  }, [selectedNoteId, setSelectedNoteId, handleToggle, expandedNodes, childrenMap]);
 
   // Memoize the rendered tree to prevent unnecessary re-renders
   const renderedTree = useMemo(() => {
     if (isLoadingRoot && rootNotes.length === 0) {
       return <div>Loading...</div>;
     }
-    return renderNoteTree(rootNotes);
-  }, [isLoadingRoot, rootNotes, renderNoteTree]);
+    return (
+      <>
+        {renderNoteTree(rootNotes)}
+        {hasMoreRootNotes && (
+          <div className="flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => loadRootNotes(currentPage + 1)}
+              disabled={isLoadingMore}
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  More
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  }, [isLoadingRoot, rootNotes, renderNoteTree, hasMoreRootNotes, isLoadingMore, currentPage, loadRootNotes]);
 
   const handleDragEnd = async (event: DragEndEvent) => {
   const { active, over } = event;
@@ -125,7 +135,10 @@ export function NoteTree({ width, height }: NoteTreeProps) {
   };
 
   if (isDescendant(active.id as string, overId)) {
-    console.error('Cannot move a parent into its own descendant');
+    toast({
+      title: 'Cannot move a parent into its own descendant',
+      variant: 'destructive',
+    });
     return;
   }
 
@@ -151,9 +164,14 @@ export function NoteTree({ width, height }: NoteTreeProps) {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <div style={{ width, height }} className="overflow-auto">
-        {renderedTree}
-      </div>
+      <ScrollArea 
+        style={{ width }} 
+        className="h-[calc(100vh-8rem)]"
+      >
+        <div className="min-h-full">
+          {renderedTree}
+        </div>
+      </ScrollArea>
     </DndContext>
   );
 }
