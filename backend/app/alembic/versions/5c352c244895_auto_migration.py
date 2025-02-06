@@ -1,8 +1,8 @@
 """auto migration
 
-Revision ID: 5efd4ec9136e
+Revision ID: 5c352c244895
 Revises: 
-Create Date: 2025-02-03 21:56:26.734662
+Create Date: 2025-02-06 21:42:14.171796
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '5efd4ec9136e'
+revision = '5c352c244895'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -49,10 +49,11 @@ def upgrade() -> None:
     sa.Column('path', sa.String(), nullable=True),
     sa.Column('depth', sa.Integer(), nullable=True),
     sa.Column('children_count', sa.Integer(), nullable=True),
+    sa.Column('position', sa.Integer(), nullable=False),
     sa.Column('organization_id', sa.String(), nullable=True),
     sa.Column('created_by', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.ForeignKeyConstraint(['created_by'], ['user.id'], ),
     sa.ForeignKeyConstraint(['organization_id'], ['organization.id'], ),
     sa.ForeignKeyConstraint(['parent_id'], ['note.id'], ),
