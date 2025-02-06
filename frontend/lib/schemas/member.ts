@@ -11,4 +11,4 @@ export const addMemberSchema = z.object({
 		),
 });
 
-export type AddMemberFormData = z.infer<typeof addMemberSchema>; 
+export type AddMemberFormData = z.infer<typeof addMemberSchema>;

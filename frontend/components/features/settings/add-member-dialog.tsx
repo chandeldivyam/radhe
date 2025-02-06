@@ -58,7 +58,10 @@ export function AddMemberDialog({
 		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error instanceof Error ? error.message : 'Failed to add member',
+				description:
+					error instanceof Error
+						? error.message
+						: 'Failed to add member',
 				variant: 'destructive',
 			});
 		} finally {
@@ -121,10 +124,7 @@ export function AddMemberDialog({
 							>
 								Cancel
 							</Button>
-							<Button
-								type="submit"
-								disabled={isSubmitting}
-							>
+							<Button type="submit" disabled={isSubmitting}>
 								{isSubmitting ? 'Adding...' : 'Add Member'}
 							</Button>
 						</div>
@@ -133,4 +133,4 @@ export function AddMemberDialog({
 			</DialogContent>
 		</Dialog>
 	);
-} 
+}

@@ -217,21 +217,23 @@ def setup_logging():
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
     
+    # Console handler setup
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     console_handler.setFormatter(console_formatter)
     
-    opensearch_handler = AsyncOpenSearchHandler()
-    opensearch_handler.setLevel(logging.INFO)
-    
-    opensearch_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    opensearch_handler.setFormatter(opensearch_formatter)
-    
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
-    
     root_logger.addHandler(console_handler)
-    root_logger.addHandler(opensearch_handler)
+    
+    # Only add OpenSearch handler in production
+    opensearch_handler = None
+    if settings.ENVIRONMENT.lower() == 'production':
+        opensearch_handler = AsyncOpenSearchHandler()
+        opensearch_handler.setLevel(logging.INFO)
+        opensearch_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        opensearch_handler.setFormatter(opensearch_formatter)
+        root_logger.addHandler(opensearch_handler)
     
     return root_logger, opensearch_handler

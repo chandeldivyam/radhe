@@ -48,45 +48,47 @@ export function MembersSettings() {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{isLoading ? (
-							skeletonRows.map((_, index) => (
-								<TableRow key={index}>
-									<TableCell>
-										<Skeleton className="w-full h-4" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="w-full h-4" />
-									</TableCell>
-									<TableCell>
-										<Skeleton className="h-8 w-8" />
-									</TableCell>
-								</TableRow>
-							))
-						) : (
-							members?.map((member) => (
-								<TableRow key={member.id}>
-									<TableCell>{member.email}</TableCell>
-									<TableCell>
-										{member.created_at &&
-											format(
-												new Date(member.created_at),
-												'MMM d, yyyy'
+						{isLoading
+							? skeletonRows.map((_, index) => (
+									<TableRow key={index}>
+										<TableCell>
+											<Skeleton className="w-full h-4" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="w-full h-4" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-8 w-8" />
+										</TableCell>
+									</TableRow>
+								))
+							: members?.map((member) => (
+									<TableRow key={member.id}>
+										<TableCell>{member.email}</TableCell>
+										<TableCell>
+											{member.created_at &&
+												format(
+													new Date(member.created_at),
+													'MMM d, yyyy'
+												)}
+										</TableCell>
+										<TableCell>
+											{member.id !== user?.id && (
+												<Button
+													variant="ghost"
+													size="icon"
+													onClick={() =>
+														setMemberToDelete(
+															member
+														)
+													}
+												>
+													<Trash2 className="h-4 w-4 text-destructive" />
+												</Button>
 											)}
-									</TableCell>
-									<TableCell>
-										{member.id !== user?.id && (
-											<Button
-												variant="ghost"
-												size="icon"
-												onClick={() => setMemberToDelete(member)}
-											>
-												<Trash2 className="h-4 w-4 text-destructive" />
-											</Button>
-										)}
-									</TableCell>
-								</TableRow>
-							))
-						)}
+										</TableCell>
+									</TableRow>
+								))}
 					</TableBody>
 				</Table>
 			</div>
@@ -110,4 +112,4 @@ export function MembersSettings() {
 			/>
 		</div>
 	);
-} 
+}

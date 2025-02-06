@@ -8,6 +8,7 @@ import uuid
 from app.api.v1.organization import router as organization_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.user import router as user_router
+from app.api.v1.note import router as note_router
 
 # Setup logging
 logger, opensearch_handler = setup_logging()
@@ -32,8 +33,9 @@ async def log_requests(request: Request, call_next):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
-    # Log request details to OpenSearch
-    await opensearch_handler.log_request(request, request_id)
+    # Log request details to OpenSearch only in production
+    if opensearch_handler:
+        await opensearch_handler.log_request(request, request_id)
     
     # Add request ID to log context
     logger.info(
@@ -86,4 +88,10 @@ app.include_router(
     user_router,
     prefix="/api/v1",
     tags=["users"]
+)
+
+app.include_router(
+    note_router,
+    prefix="/api/v1",
+    tags=["notes"]
 )

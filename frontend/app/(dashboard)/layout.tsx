@@ -28,15 +28,15 @@ export default function DashboardLayout({
 	};
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="h-screen flex flex-col bg-background">
 			<CommandDialog />
 			<Navbar
 				user={user}
 				onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
 			/>
-			<div className="flex h-[calc(100vh-4rem)]">
+			<div className="flex-1 flex overflow-hidden">
 				<SideNav open={sidebarOpen} onClose={handleSidebarClose} />
-				<main className="flex-1 overflow-y-auto p-6">{children}</main>
+				<main className="flex-1 overflow-auto">{children}</main>
 			</div>
 		</div>
 	);

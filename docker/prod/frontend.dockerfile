@@ -2,8 +2,8 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm using npm
+RUN npm install -g pnpm
 
 # Copy package files
 COPY ./frontend/package.json ./frontend/pnpm-lock.yaml ./

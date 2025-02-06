@@ -1,35 +1,26 @@
-import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import type { UserResponse } from '@/types/auth';
 import type { AddMemberFormData } from '@/lib/schemas/member';
 import { toast } from '@/lib/hooks/use-toast';
 
+const fetcher = async (url: string) => {
+	const response = await fetch(url);
+	if (!response.ok) {
+		const error = await response.json();
+		throw new Error(error.error || 'Failed to fetch members');
+	}
+	return response.json();
+};
+
 export function useMembers() {
-	const [members, setMembers] = useState<UserResponse[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-
-	const fetchMembers = async () => {
-		try {
-			const response = await fetch('/api/users/all');
-			if (!response.ok) {
-				const error = await response.json();
-				throw new Error(error.error || 'Failed to fetch members');
-			}
-			const data = await response.json();
-			setMembers(data);
-		} catch (error) {
-			toast({
-				title: 'Error',
-				description: error instanceof Error ? error.message : 'Failed to fetch members',
-				variant: 'destructive',
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchMembers();
-	}, []);
+	const {
+		data: members,
+		error,
+		mutate,
+	} = useSWR<UserResponse[]>('/api/users/all', fetcher, {
+		revalidateOnFocus: false,
+		dedupingInterval: 5000,
+	});
 
 	const addMember = async (data: AddMemberFormData) => {
 		try {
@@ -44,7 +35,9 @@ export function useMembers() {
 				throw new Error(error.error || 'Failed to add member');
 			}
 
-			await fetchMembers();
+			// Optimistically update the cache
+			await mutate();
+
 			toast({
 				title: 'Success',
 				description: 'Member added successfully',
@@ -52,7 +45,10 @@ export function useMembers() {
 		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error instanceof Error ? error.message : 'Failed to add member',
+				description:
+					error instanceof Error
+						? error.message
+						: 'Failed to add member',
 				variant: 'destructive',
 			});
 			throw error;
@@ -61,16 +57,27 @@ export function useMembers() {
 
 	const deleteMember = async (userId: string) => {
 		try {
+			// Optimistically remove the member from the cache
+			const currentMembers = members || [];
+			mutate(
+				currentMembers.filter((member) => member.id !== userId),
+				false
+			);
+
 			const response = await fetch(`/api/users/${userId}/delete`, {
 				method: 'DELETE',
 			});
 
 			if (!response.ok) {
+				// Revert the optimistic update if the deletion failed
+				await mutate();
 				const error = await response.json();
 				throw new Error(error.error || 'Failed to delete member');
 			}
 
-			await fetchMembers();
+			// Confirm the cache update
+			await mutate();
+
 			toast({
 				title: 'Success',
 				description: 'Member deleted successfully',
@@ -78,7 +85,10 @@ export function useMembers() {
 		} catch (error) {
 			toast({
 				title: 'Error',
-				description: error instanceof Error ? error.message : 'Failed to delete member',
+				description:
+					error instanceof Error
+						? error.message
+						: 'Failed to delete member',
 				variant: 'destructive',
 			});
 			throw error;
@@ -87,8 +97,9 @@ export function useMembers() {
 
 	return {
 		members,
-		isLoading,
+		isLoading: !error && !members,
+		isError: error,
 		addMember,
 		deleteMember,
 	};
-} 
+}
