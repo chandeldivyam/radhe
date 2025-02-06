@@ -70,13 +70,13 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
       <div
         ref={setRefs}
         style={{ 
-          paddingLeft: `${level * 12}px`,
+          paddingLeft: `${level}px`,
           ...transform ? {
             transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
           } : undefined
         }}
         className={cn(
-          'flex items-center gap-1 px-2 py-1 rounded-sm cursor-pointer group',
+          'flex items-center gap-1 py-1 rounded-sm cursor-pointer group',
           'hover:bg-accent/50',
           isSelected && 'bg-accent',
           isOver && 'bg-primary/20'
@@ -110,12 +110,12 @@ export function TreeNode({ note, level, isSelected, onSelect, onToggle }: TreeNo
         <div 
           {...attributes} 
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-accent/50 rounded-sm"
+          className="relative w-4 h-4 flex items-center justify-center"
         >
-          <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+          <FileText className="h-4 w-4 text-muted-foreground absolute transition-opacity group-hover:opacity-0" />
+          <GripVertical className="h-4 w-4 text-muted-foreground absolute opacity-0 transition-opacity group-hover:opacity-100 cursor-grab active:cursor-grabbing" />
         </div>
 
-        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="text-sm truncate min-w-0 flex-1">{note.title}</span>
         
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">

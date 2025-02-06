@@ -57,7 +57,7 @@ export function NoteTree({ width, height }: NoteTreeProps) {
     return notes.map((note, index) => {
       const isLast = index === notes.length - 1;
       return (
-        <div key={note.id} className="relative">
+        <div key={note.id} className="relative my-1">
           <DropIndicator id={note.id} level={level} />
           <TreeNode
             note={note}

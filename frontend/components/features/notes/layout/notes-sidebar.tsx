@@ -24,7 +24,10 @@ export function NotesSidebar() {
         </Button>
       </div>
 
-      <NoteTree width={232} height={800} />
+
+      <div className="pl-5">
+        <NoteTree width={232} height={800} />
+      </div>
 
       <CreateNoteDialog
         open={isCreateDialogOpen}
