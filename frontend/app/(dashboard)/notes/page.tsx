@@ -14,7 +14,9 @@ export default function Notes() {
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="text-center space-y-4">
-					<div className="animate-pulse text-muted-foreground">Loading your notes...</div>
+					<div className="animate-pulse text-muted-foreground">
+						Loading your notes...
+					</div>
 				</div>
 			</div>
 		);
@@ -37,18 +39,19 @@ export default function Notes() {
 				<FileText className="h-12 w-12 mx-auto text-muted-foreground" />
 				<h1 className="text-2xl font-bold">Welcome to Notes</h1>
 				<p className="text-muted-foreground max-w-md">
-					Select a note from the sidebar or create a new one to get started.
+					Select a note from the sidebar or create a new one to get
+					started.
 				</p>
 			</div>
-			
+
 			<Button onClick={() => setIsCreateDialogOpen(true)}>
 				<Plus className="h-4 w-4 mr-2" />
 				Create New Note
 			</Button>
 
-			<CreateNoteDialog 
-				open={isCreateDialogOpen} 
-				onOpenChange={setIsCreateDialogOpen} 
+			<CreateNoteDialog
+				open={isCreateDialogOpen}
+				onOpenChange={setIsCreateDialogOpen}
 			/>
 		</div>
 	);
