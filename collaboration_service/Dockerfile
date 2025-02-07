@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE ${HOCUSPOCUS_PORT}
 
-CMD ["pnpm", "start"]
+CMD ["pnpm", "dev"]

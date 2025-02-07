@@ -158,9 +158,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "1616:1234"
-    environment:
-      - HOCUSPOCUS_PORT=${HOCUSPOCUS_PORT}
-      - BACKEND_URL=${BACKEND_URL}
     volumes:
       - ./collaboration_service:/app
       - /app/node_modules
