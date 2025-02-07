@@ -62,3 +62,9 @@ class NoteListResponse(BaseModel):
 
 class NoteDetailResponse(NoteListResponse):
     content: str
+
+class NoteWSResponse(BaseModel):
+    binary_content: Optional[List[int]] = None
+
+class NoteWSUpdate(BaseModel):
+    update: List[int]

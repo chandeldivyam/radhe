@@ -1,7 +1,9 @@
 const WebSocket = require('ws');
 const http = require('http');
-const { setupWSConnection } = require('y-websocket/bin/utils');
+const Y = require('yjs');
 const dotenv = require('dotenv');
+const axios = require('axios');
+const { setupWSConnection } = require('y-websocket/bin/utils');
 
 // Load environment variables
 dotenv.config();
@@ -10,10 +12,86 @@ dotenv.config();
 const SERVER_CONFIG = {
   host: process.env.HOST || '0.0.0.0',
   port: parseInt(process.env.PORT || '1234', 10),
-  cors: {
-    origin: process.env.BACKEND_CORS_ORIGINS || '*'
-  }
+  apiBaseUrl: process.env.API_BASE_URL || 'http://backend:8000'
 };
+
+class APIPersistence {
+  constructor(apiBaseUrl) {
+    this.apiBaseUrl = apiBaseUrl;
+    this.pendingUpdates = new Map(); // Track pending updates
+  }
+
+  async getYDoc(docName) {
+    try {
+      const response = await axios.get(`${this.apiBaseUrl}/api/v1/notes/ws/${docName}`);
+      const ydoc = new Y.Doc();
+      if (response.data.binary_content) {
+        Y.applyUpdate(ydoc, new Uint8Array(response.data.binary_content));
+      }
+      return ydoc;
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      return new Y.Doc();
+    }
+  }
+
+  async storeUpdate(docName, update) {
+    try {
+      // Debounce updates
+      if (this.pendingUpdates.has(docName)) {
+        clearTimeout(this.pendingUpdates.get(docName));
+      }
+
+      this.pendingUpdates.set(docName, setTimeout(async () => {
+        try {
+          await axios.post(`${this.apiBaseUrl}/api/v1/notes/ws/${docName}/update`, {
+            update: Array.from(update)
+          });
+          this.pendingUpdates.delete(docName);
+        } catch (error) {
+          console.error('Error storing update:', error);
+        }
+      }, 5000)); // 5 second debounce
+    } catch (error) {
+      console.error('Error scheduling update:', error);
+    }
+  }
+}
+
+// Initialize persistence
+const persistence = new APIPersistence(SERVER_CONFIG.apiBaseUrl);
+
+// Set up persistence
+const { setPersistence } = require('y-websocket/bin/utils');
+setPersistence({
+  provider: persistence,
+  bindState: async (docName, ydoc) => {
+    try {
+      const persistedYdoc = await persistence.getYDoc(docName);
+      
+      // Apply persisted state
+      const persistedState = Y.encodeStateAsUpdate(persistedYdoc);
+      Y.applyUpdate(ydoc, persistedState);
+      
+      // Set up update handler
+      ydoc.on('update', (update, origin) => {
+        if (origin !== 'remote') { // Avoid infinite loops
+          persistence.storeUpdate(docName, Y.encodeStateAsUpdate(ydoc));
+        }
+      });
+    } catch (error) {
+      console.error('Error binding state:', error);
+    }
+  },
+  writeState: async (docName, ydoc) => {
+    try {
+      const state = Y.encodeStateAsUpdate(ydoc);
+      await persistence.storeUpdate(docName, state);
+    } catch (error) {
+      console.error('Error writing state:', error);
+    }
+  }
+});
 
 // Create WebSocket server
 const wss = new WebSocket.Server({ 
@@ -48,14 +126,7 @@ wss.on('connection', (ws, req) => {
 
 // Handle WebSocket upgrade
 server.on('upgrade', (request, socket, head) => {
-  // TODO: Add authentication middleware here
-  // const isAuthorized = checkAuth(request);
-  // if (!isAuthorized) {
-  //   socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-  //   socket.destroy();
-  //   return;
-  // }
-
+  // You can add authentication here if needed
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
@@ -76,4 +147,9 @@ process.on('SIGTERM', () => {
       process.exit(0);
     });
   });
+});
+
+// Error handling for unhandled rejections
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled rejection:', error);
 });

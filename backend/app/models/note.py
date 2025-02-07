@@ -24,6 +24,9 @@ class Note(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
+    # Add this field for collaborative editing
+    binary_content = Column(Text, nullable=True)  # Store the Yjs binary state as base64
+    
     # Fix the self-referential relationship
     children = relationship(
         "Note",
