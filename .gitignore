@@ -79,7 +79,6 @@ docker-compose.yml # If you don't want to check in this file
 *.dockerignore
 .dockerenv
 .docker
-*/Dockerfile
 
 # ==========================================
 # Environment Variables
