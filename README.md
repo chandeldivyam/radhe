@@ -12,6 +12,7 @@
 docker-compose -f docker-compose.dev.yml up --build -d
 docker-compose -f docker-compose.dev.yml logs -f frontend backend
 ```
+7. To exec into database container `docker compose -f docker-compose.dev.yml exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
 
 # How to setup infrastructure
 

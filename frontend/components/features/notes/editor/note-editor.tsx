@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/common/RichTextEditor';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/lib/auth/authContext';
 
 interface NoteEditorProps {
 	note: Note;
@@ -13,6 +14,7 @@ interface NoteEditorProps {
 export function NoteEditor({ note }: NoteEditorProps) {
 	const [title, setTitle] = useState(note.title);
 	const [isSaving, setIsSaving] = useState(false);
+	const { user } = useAuth();
 
 	return (
 		<div className="relative h-full flex flex-col">
@@ -36,7 +38,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
 				/>
 				
 				<div className="min-h-[calc(100vh-200px)]">
-					<RichTextEditor noteId={note.id} />
+					<RichTextEditor noteId={note.id} username={user?.email} />
 				</div>
 			</div>
 		</div>

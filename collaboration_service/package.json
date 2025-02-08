@@ -12,13 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@hocuspocus/extension-database": "^2.15.0",
+    "@hocuspocus/server": "^2.15.0",
     "axios": "^1.7.9",
-    "dotenv": "^16.4.7",
-    "lib0": "^0.2.99",
-    "ws": "^8.18.0",
-    "y-protocols": "^1.0.6",
-    "y-websocket": "^2.1.0",
-    "yjs": "^13.6.23"
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
