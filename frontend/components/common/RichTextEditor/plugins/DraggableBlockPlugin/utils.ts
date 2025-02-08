@@ -3,53 +3,53 @@ export function isHTMLElement(x: unknown): x is HTMLElement {
 }
   
 export class Point {
-    private readonly _x: number;
-    private readonly _y: number;
-  
-    constructor(x: number, y: number) {
-      this._x = x;
-      this._y = y;
-    }
-  
-    get x(): number {
-      return this._x;
-    }
-  
-    get y(): number {
-      return this._y;
-    }
-  
-    public equals({x, y}: Point): boolean {
-      return this.x === x && this.y === y;
-    }
-  
-    public calcDeltaXTo({x}: Point): number {
-      return this.x - x;
-    }
-  
-    public calcDeltaYTo({y}: Point): number {
-      return this.y - y;
-    }
-  
-    public calcHorizontalDistanceTo(point: Point): number {
-      return Math.abs(this.calcDeltaXTo(point));
-    }
-  
-    public calcVerticalDistance(point: Point): number {
-      return Math.abs(this.calcDeltaYTo(point));
-    }
-  
-    public calcDistanceTo(point: Point): number {
-      return Math.sqrt(
-        Math.pow(this.calcDeltaXTo(point), 2) +
-          Math.pow(this.calcDeltaYTo(point), 2),
-      );
-    }
+  private readonly _x: number;
+  private readonly _y: number;
+
+  constructor(x: number, y: number) {
+    this._x = x;
+    this._y = y;
   }
-  
-  export function isPoint(x: unknown): x is Point {
-    return x instanceof Point;
+
+  get x(): number {
+    return this._x;
   }
+
+  get y(): number {
+    return this._y;
+  }
+
+  public equals({x, y}: Point): boolean {
+    return this.x === x && this.y === y;
+  }
+
+  public calcDeltaXTo({x}: Point): number {
+    return this.x - x;
+  }
+
+  public calcDeltaYTo({y}: Point): number {
+    return this.y - y;
+  }
+
+  public calcHorizontalDistanceTo(point: Point): number {
+    return Math.abs(this.calcDeltaXTo(point));
+  }
+
+  public calcVerticalDistance(point: Point): number {
+    return Math.abs(this.calcDeltaYTo(point));
+  }
+
+  public calcDistanceTo(point: Point): number {
+    return Math.sqrt(
+      Math.pow(this.calcDeltaXTo(point), 2) +
+        Math.pow(this.calcDeltaYTo(point), 2),
+    );
+  }
+}
+
+export function isPoint(x: unknown): x is Point {
+  return x instanceof Point;
+}
   
 
 type ContainsPointReturn = {
@@ -62,7 +62,7 @@ type ContainsPointReturn = {
   };
 };
 
-export class Rect {
+export class Rectangle {
   private readonly _left: number;
   private readonly _top: number;
   private readonly _right: number;
@@ -105,7 +105,7 @@ export class Rect {
     return Math.abs(this._bottom - this._top);
   }
 
-  public equals({top, left, bottom, right}: Rect): boolean {
+  public equals({top, left, bottom, right}: Rectangle): boolean {
     return (
       top === this._top &&
       bottom === this._bottom &&
@@ -115,8 +115,8 @@ export class Rect {
   }
 
   public contains({x, y}: Point): ContainsPointReturn;
-  public contains({top, left, bottom, right}: Rect): boolean;
-  public contains(target: Point | Rect): boolean | ContainsPointReturn {
+  public contains({top, left, bottom, right}: Rectangle): boolean;
+  public contains(target: Point | Rectangle): boolean | ContainsPointReturn {
     if (isPoint(target)) {
       const {x, y} = target;
 
@@ -153,7 +153,7 @@ export class Rect {
     }
   }
 
-  public intersectsWith(rect: Rect): boolean {
+  public intersectsWith(rect: Rectangle): boolean {
     const {left: x1, top: y1, width: w1, height: h1} = rect;
     const {left: x2, top: y2, width: w2, height: h2} = this;
     const maxX = x1 + w1 >= x2 + w2 ? x1 + w1 : x2 + w2;
@@ -168,8 +168,8 @@ export class Rect {
     top = this.top,
     right = this.right,
     bottom = this.bottom,
-  }): Rect {
-    return new Rect(left, top, right, bottom);
+  }): Rectangle {
+    return new Rectangle(left, top, right, bottom);
   }
 
   static fromLTRB(
@@ -177,8 +177,8 @@ export class Rect {
     top: number,
     right: number,
     bottom: number,
-  ): Rect {
-    return new Rect(left, top, right, bottom);
+  ): Rectangle {
+    return new Rectangle(left, top, right, bottom);
   }
 
   static fromLWTH(
@@ -186,18 +186,29 @@ export class Rect {
     width: number,
     top: number,
     height: number,
-  ): Rect {
-    return new Rect(left, top, left + width, top + height);
+  ): Rectangle {
+    return new Rectangle(left, top, left + width, top + height);
   }
 
-  static fromPoints(startPoint: Point, endPoint: Point): Rect {
+  static fromPoints(startPoint: Point, endPoint: Point): Rectangle {
     const {y: top, x: left} = startPoint;
     const {y: bottom, x: right} = endPoint;
-    return Rect.fromLTRB(left, top, right, bottom);
+    return Rectangle.fromLTRB(left, top, right, bottom);
   }
 
-  static fromDOM(dom: HTMLElement): Rect {
+  static fromDOM(dom: HTMLElement): Rectangle {
     const {top, width, left, height} = dom.getBoundingClientRect();
-    return Rect.fromLWTH(left, width, top, height);
+    return Rectangle.fromLWTH(left, width, top, height);
   }
+}
+
+export function calculateZoomLevel(element: Element | null): number {
+  let zoom = 1;
+  // if (needsManualZoom()) {
+  //   while (element) {
+  //     zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));
+  //     element = element.parentElement;
+  //   }
+  // }
+  return zoom;
 }
