@@ -1,0 +1,61 @@
+/* src/components/RichTextEditor/plugins/DraggableBlockPlugin/styles.css */
+
+/* Draggable block menu container */
+.draggable-block-menu {
+	border: 1px solid hsl(var(--border));
+	background-color: hsl(var(--background));
+	border-radius: 4px;
+	padding: 2px 4px;
+	cursor: grab;
+	opacity: 1; /* Changed from 0 to make it visible initially */
+	position: absolute;
+	left: 0;
+	top: 0;
+	will-change: transform;
+	transition: opacity 0.2s ease, background-color 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	min-height: 24px;
+	z-index: 20000;
+  }
+  
+  /* Icon inside the menu */
+  .draggable-block-menu .icon {
+	width: 16px;
+	height: 16px;
+	opacity: 0.7;
+	/* Use a simpler icon approach */
+	background-color: hsl(var(--foreground));
+	-webkit-mask-image: url('/draggable-block-menu.svg');
+	mask-image: url('/draggable-block-menu.svg');
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+	mask-position: center;
+	-webkit-mask-position: center;
+	mask-size: contain;
+	-webkit-mask-size: contain;
+  }
+  
+  /* Hover & active states */
+  .draggable-block-menu:hover {
+	background-color: hsl(var(--accent));
+  }
+  
+  .draggable-block-menu:active {
+	cursor: grabbing;
+  }
+  
+  /* The "target line" that shows drop position */
+  .draggable-block-target-line {
+	pointer-events: none;
+	background: hsl(var(--primary));
+	height: 4px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	opacity: 1; /* Changed from 0 to make it visible */
+	will-change: transform;
+	transition: opacity 0.2s ease;
+  }

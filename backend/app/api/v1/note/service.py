@@ -5,6 +5,10 @@ from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveReque
 import uuid
 from sqlalchemy import update, func, and_, or_
 import base64
+import logging
+import sqlalchemy
+
+logger = logging.getLogger(__name__)
 
 class NoteService:
     POSITION_GAP = 1000  # Gap between positions
@@ -476,36 +480,37 @@ class NoteService:
             return NoteWSResponse(binary_content=None)
             
         try:
-            # Convert base64 string to list of integers
+            # Return the binary content directly as a list of integers
             binary_data = base64.b64decode(note.binary_content)
-            return NoteWSResponse(
-                binary_content=list(binary_data)
-            )
+            return NoteWSResponse(binary_content=list(binary_data))
         except Exception as e:
+            logger.error(f"Error decoding binary content: {str(e)}")
             return NoteWSResponse(binary_content=None)
 
     @staticmethod
     async def update_note_ws_content(
         db: Session,
         note_id: str,
-        update: List[int],
+        update_data: List[int],
     ) -> None:
         """Update note's WebSocket collaboration content"""
         try:
-            note = db.query(Note).filter(Note.id == note_id).first()
-            if not note:
-                raise ValueError("Note not found")
-                
-            binary_data = bytes(update)
+            # Convert the update array to bytes and store as base64
+            binary_data = bytes(update_data)
             base64_content = base64.b64encode(binary_data).decode('utf-8')
             
-            # Use update instead of direct assignment for atomic operation
-            db.query(Note).filter(Note.id == note_id).update({
-                "binary_content": base64_content,
-                "updated_at": func.now()
-            })
+            stmt = (
+                sqlalchemy.update(Note)
+                .where(Note.id == note_id)
+                .values(
+                    binary_content=base64_content,
+                    updated_at=func.now()
+                )
+            )
             
+            db.execute(stmt)
             db.commit()
         except Exception as e:
             db.rollback()
+            logger.error(f"Error updating binary content: {str(e)}")
             raise

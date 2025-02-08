@@ -19,7 +19,6 @@ const customDatabase = new Database({
     try {
       const response = await axios.get(`${SERVER_CONFIG.apiBaseUrl}/api/v1/notes/ws/${documentName}`);
       if (response.data.binary_content) {
-        console.log('success')
         return new Uint8Array(response.data.binary_content);
       }
       return null;
@@ -29,7 +28,6 @@ const customDatabase = new Database({
     }
   },
   store: async ({ documentName, state }) => {
-    console.log('here in store')
     try {
       if (Array.from(state).length > 0) {
         await axios.post(`${SERVER_CONFIG.apiBaseUrl}/api/v1/notes/ws/${documentName}/update`, {

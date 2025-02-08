@@ -68,6 +68,7 @@ build/
 # NPM-related
 package-lock.json
 yarn.lock
+.pnpm-store/
 
 # ==========================================
 # Docker

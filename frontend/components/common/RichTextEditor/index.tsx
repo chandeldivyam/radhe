@@ -1,20 +1,32 @@
 'use client';
 
+import './editor.css';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
+import { TRANSFORMERS } from '@lexical/markdown';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import LexicalErrorBoundary from "@lexical/react/LexicalErrorBoundary";
+import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import { CollaborationPlugin } from "@lexical/react/LexicalCollaborationPlugin";
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
+import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
+import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
+import AutoLinkPlugin from './plugins/AutoLinkPlugin';
+import { ClickableLinkPlugin } from '@lexical/react/LexicalClickableLinkPlugin';
+import LinkPlugin from './plugins/LinkPlugin';
+import { editorConfig } from './config';
 import * as Y from "yjs";
 import { type Provider } from "@lexical/yjs";
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/provider";
-import { useRef } from "react";
-
+import { useEffect, useRef, useState } from "react";
 interface RichTextEditorProps {
   noteId: string;
   username?: string;
+  editable?: boolean;
 }
 
 // Create a shared websocket instance
@@ -59,48 +71,63 @@ function createWebsocketProvider({
   };
 }
 
-export function RichTextEditor({ noteId, username }: RichTextEditorProps) {
+export function RichTextEditor({ noteId, username, editable = true }: RichTextEditorProps) {
   const providerRef = useRef<Provider | null>(null);
   const websocketProviderRef = useRef<HocuspocusProviderWebsocket | null>(null);
   const cursorsContainerRef = useRef<HTMLDivElement>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  
+  useEffect(() => {
+		if (editorContainerRef.current) {
+			setIsEditorReady(true);
+		}
+	}, []);
+
 
   return (
     <div className="relative">
       <div ref={cursorsContainerRef} className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none" />
       <LexicalComposer
         initialConfig={{
-          namespace: `notes`,
-          editorState: null,
-          nodes: [],
-          theme: {
-            root: 'p-4 min-h-[200px]',
-          },
-          onError: (error: Error) => {
-            console.error(error);
-          },
+          ...editorConfig,
+          editable: editable,
         }}
       >
-        <PlainTextPlugin
-          contentEditable={<ContentEditable />}
-          ErrorBoundary={LexicalErrorBoundary}
-        />
-        <AutoFocusPlugin />
-        <CollaborationPlugin
-          key={noteId}
-          id={noteId}
-          providerFactory={(id, yjsDocMap) => {
-            if (!providerRef.current) {
-              const { provider, websocketProvider } = createWebsocketProvider({ id, yjsDocMap });
-              providerRef.current = provider;
-              websocketProviderRef.current = websocketProvider;
-              return providerRef.current;
-            }
-            return providerRef.current;
-          }}
-          shouldBootstrap={true}
-          username={username}
-          cursorsContainerRef={cursorsContainerRef}
-        />
+        <div className="editor-container" ref={editorContainerRef} style={{position: 'relative'}}>
+              <RichTextPlugin
+                contentEditable={<ContentEditable style={{position: 'relative', marginLeft: '35px'}}/>}
+                ErrorBoundary={LexicalErrorBoundary}
+              />
+              <HistoryPlugin />
+              <AutoFocusPlugin />
+              <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+              <ListPlugin />
+              <TabIndentationPlugin />
+              <EmojiPickerPlugin />
+              {isEditorReady && editorContainerRef.current && (
+                <DraggableBlockPlugin anchorElem={editorContainerRef.current} />
+              )}
+              <AutoLinkPlugin />
+              <LinkPlugin />
+              <ClickableLinkPlugin disabled={false}/>
+              <CollaborationPlugin
+                key={noteId}
+                id={noteId}
+                providerFactory={(id, yjsDocMap) => {
+                  if (!providerRef.current) {
+                    const { provider, websocketProvider } = createWebsocketProvider({ id, yjsDocMap });
+                    providerRef.current = provider;
+                    websocketProviderRef.current = websocketProvider;
+                    return providerRef.current;
+                  }
+                  return providerRef.current;
+                }}
+                shouldBootstrap={true}
+                username={username}
+                cursorsContainerRef={cursorsContainerRef}
+              />
+        </div>
       </LexicalComposer>
     </div>
   );
