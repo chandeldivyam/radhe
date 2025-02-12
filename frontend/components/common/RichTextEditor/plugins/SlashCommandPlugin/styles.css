@@ -1,0 +1,32 @@
+.slash-command-menu {
+  z-index: 100;
+  min-width: 300px;
+  max-width: 400px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--background);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: slideIn 0.1s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom scrollbar for the menu */
+.slash-command-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.slash-command-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+

@@ -1,4 +1,4 @@
-import { EditorThemeClasses } from 'lexical';
+import type { EditorThemeClasses } from 'lexical';
 
 export const theme: EditorThemeClasses = {
   ltr: 'ltr',
@@ -19,6 +19,7 @@ export const theme: EditorThemeClasses = {
     underline: 'editor-text-underline',
     strikethrough: 'editor-text-strikethrough',
     underlineStrikethrough: 'editor-text-underlineStrikethrough',
+    code: 'editor-code',
   },
   list: {
     checklist: 'editor-checklist',
@@ -39,4 +40,5 @@ export const theme: EditorThemeClasses = {
   },
   link: 'editor-link',
   editorPlaceholder: 'editor-placeholder',
+  hr: 'editor-hr',
 };

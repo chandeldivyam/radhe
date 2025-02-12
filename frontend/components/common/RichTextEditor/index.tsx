@@ -17,12 +17,16 @@ import EmojiPickerPlugin from './plugins/EmojiPickerPlugin';
 import DraggableBlockPlugin from './plugins/DraggableBlockPlugin';
 import AutoLinkPlugin from './plugins/AutoLinkPlugin';
 import { ClickableLinkPlugin } from '@lexical/react/LexicalClickableLinkPlugin';
+import CodeHighlightPlugin from './plugins/CodeHighlightPlugin';
+import { SlashCommandPlugin } from './plugins/SlashCommandPlugin';
 import LinkPlugin from './plugins/LinkPlugin';
 import { editorConfig } from './config';
 import * as Y from "yjs";
 import { type Provider } from "@lexical/yjs";
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/provider";
 import { useEffect, useRef, useState } from "react";
+import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
+
 interface RichTextEditorProps {
   noteId: string;
   username?: string;
@@ -111,6 +115,9 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
               <AutoLinkPlugin />
               <LinkPlugin />
               <ClickableLinkPlugin disabled={false}/>
+              <CodeHighlightPlugin />
+              <SlashCommandPlugin />
+              <HorizontalRulePlugin />
               <CollaborationPlugin
                 key={noteId}
                 id={noteId}

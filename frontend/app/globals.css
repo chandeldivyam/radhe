@@ -39,6 +39,7 @@ body {
 		--gradient-blur: 1px; /* Slightly increased blur */
 		--gradient-opacity: 0.85; /* Increased opacity */
 		--gradient-animation-duration: 3s;
+		--code: #ff0000;
 	}
 	.dark {
 		--background: 240 10% 3.9%;
@@ -68,6 +69,7 @@ body {
 		--gradient-start: 231 48% 48%;
 		--gradient-middle: 271 68% 63%;
 		--gradient-end: 326 54% 64%;
+		--code: #ff5d5d;
 	}
 }
 
