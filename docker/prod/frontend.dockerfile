@@ -22,8 +22,8 @@ FROM node:20-slim AS runner
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm using npm (same as builder stage)
+RUN npm install -g pnpm
 
 # Copy necessary files from builder
 COPY --from=builder /app/package.json ./

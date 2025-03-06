@@ -21,7 +21,7 @@ export function SlashCommandMenu({
   menuProps,
 }: SlashCommandMenuProps) {
   const [search, setSearch] = useState(query);
-  const { selectedIndex, selectOptionAndCleanUp, setHighlightedIndex, options } = menuProps;
+  const { selectOptionAndCleanUp, setHighlightedIndex, options } = menuProps;
 
   const inputRef = useCallback((node: HTMLInputElement) => {
     if (node !== null) {

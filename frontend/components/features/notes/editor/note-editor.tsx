@@ -1,10 +1,7 @@
 'use client';
 
 import { Note } from '@/types/note';
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { RichTextEditor } from '@/components/common/RichTextEditor';
-import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/authContext';
 
 interface NoteEditorProps {
@@ -12,8 +9,6 @@ interface NoteEditorProps {
 }
 
 export function NoteEditor({ note }: NoteEditorProps) {
-	const [title, setTitle] = useState(note.title);
-	const [isSaving, setIsSaving] = useState(false);
 	const { user } = useAuth();
 
 	return (
