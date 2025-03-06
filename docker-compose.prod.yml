@@ -181,7 +181,7 @@ services:
       dockerfile: Dockerfile.prod
     restart: unless-stopped
     env_file:
-      - ./collaboration_service/.env.prod
+      - ./collaboration_service/.env
     networks:
       - app_network
     depends_on:
