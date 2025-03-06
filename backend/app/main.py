@@ -11,7 +11,7 @@ from app.api.v1.user import router as user_router
 from app.api.v1.note import router as note_router
 
 # Setup logging
-logger, opensearch_handler = setup_logging()
+logger, _ = setup_logging()  # Changed to use _ since we don't need opensearch_handler
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -33,11 +33,7 @@ async def log_requests(request: Request, call_next):
     request_id = str(uuid.uuid4())
     start_time = time.time()
     
-    # Log request details to OpenSearch only in production
-    if opensearch_handler:
-        await opensearch_handler.log_request(request, request_id)
-    
-    # Add request ID to log context
+    # Log request details (removed OpenSearch logging)
     logger.info(
         "Request started",
         extra={"request_id": request_id}

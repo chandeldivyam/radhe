@@ -72,7 +72,8 @@ resource "aws_instance" "app" {
                 curl \
                 gnupg \
                 lsb-release \
-                git
+                git \
+                nfs-common
 
               # Install Docker
               curl -fsSL https://get.docker.com -o get-docker.sh
@@ -88,6 +89,25 @@ resource "aws_instance" "app" {
               # Create directories for services
               mkdir -p /opt/radhe/{traefik,data}
               chown -R ubuntu:ubuntu /opt/radhe
+
+              # Mount EFS for Traefik certificates
+              mkdir -p /mnt/efs/traefik
+              echo "${var.efs_dns_name}:/ /mnt/efs/traefik nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport 0 0" >> /etc/fstab
+              mount -a
+              
+              # Create Docker volume directory and set permissions
+              mkdir -p /var/lib/docker/volumes/traefik/_data
+              # Wait for EFS mount to be ready
+              sleep 10
+              # Create traefik directory in EFS if it doesn't exist
+              mkdir -p /mnt/efs/traefik/acme
+              # Set permissions
+              chown -R 1000:1000 /mnt/efs/traefik
+              chmod -R 755 /mnt/efs/traefik
+              
+              # Create symlink for Docker volume
+              rm -rf /var/lib/docker/volumes/traefik/_data
+              ln -sf /mnt/efs/traefik /var/lib/docker/volumes/traefik/_data
 
               # Install basic monitoring tools
               apt-get install -y \

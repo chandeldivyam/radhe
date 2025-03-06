@@ -22,6 +22,7 @@ docker-compose -f docker-compose.dev.yml logs -f frontend backend
 export AWS_ACCESS_KEY_ID='your_access_key'
 export AWS_SECRET_ACCESS_KEY='your_secret_key'
 ```
+```
 
 2. Setup terraform.tfvars file in terraform/environments/prod
 

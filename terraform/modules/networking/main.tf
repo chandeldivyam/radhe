@@ -89,6 +89,15 @@ resource "aws_security_group" "app" {
     description = "Traefik Dashboard"
   }
 
+  # NFS access for EFS
+  ingress {
+    from_port   = 2049
+    to_port     = 2049
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+    description = "NFS for EFS"
+  }
+
   # Allow all outbound traffic
   egress {
     from_port   = 0

@@ -14,7 +14,6 @@ pydantic
 python-dotenv
 email-validator
 python-json-logger
-opensearch-py[async]
 aiohttp
 minio
 flower

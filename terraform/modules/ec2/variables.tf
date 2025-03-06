@@ -27,3 +27,9 @@ variable "project_name" {
     type        = string
     description = "SSH public key for instance access"
   }
+  
+  variable "efs_dns_name" {
+    type        = string
+    description = "DNS name of the EFS file system"
+    default     = ""
+  }

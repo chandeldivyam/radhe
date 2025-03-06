@@ -31,6 +31,16 @@ module "networking" {
     availability_zone  = "${var.aws_region}a"
     ssh_allowed_cidr   = var.ssh_allowed_cidr
 }
+
+module "efs" {
+    source = "../../modules/efs"
+    
+    project_name      = var.project_name
+    environment       = var.environment
+    vpc_id            = module.networking.vpc_id
+    subnet_id         = module.networking.public_subnet_id
+    security_group_id = module.networking.security_group_id
+}
   
 module "ec2" {
     source = "../../modules/ec2"
@@ -41,4 +51,5 @@ module "ec2" {
     subnet_id         = module.networking.public_subnet_id
     security_group_id = module.networking.security_group_id
     ssh_public_key    = var.ssh_public_key
+    efs_dns_name      = module.efs.efs_dns_name
 }
