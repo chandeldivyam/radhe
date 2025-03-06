@@ -172,6 +172,27 @@ services:
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
+  ###########################################################################
+  # 11. COLLABORATION SERVICE
+  ###########################################################################
+  collaboration:
+    build:
+      context: ./collaboration_service
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - ./collaboration_service/.env.prod
+    networks:
+      - app_network
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collaboration.rule=Host(`colab.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.collaboration.entrypoints=websecure"
+      - "traefik.http.routers.collaboration.tls.certresolver=myresolver"
+      - "traefik.http.services.collaboration.loadbalancer.server.port=1234"
+
 networks:
   app_network:
     driver: bridge
