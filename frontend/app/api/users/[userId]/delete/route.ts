@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server';
 import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
 export async function DELETE(
 	request: Request,
-	{ params }: { params: { userId: string } }
+	{ params }: { params: Promise<{ userId: string }> }
 ) {
 	try {
+		const awaitedParams = await params;
 		const cookieStore = await cookies();
 		const accessToken = cookieStore.get('access_token');
 
@@ -17,7 +18,7 @@ export async function DELETE(
 		}
 
 		const response = await fetch(
-			`${process.env.API_URL}/api/v1/users/${params.userId}`,
+			`${process.env.API_URL}/api/v1/users/${awaitedParams.userId}`,
 			{
 				method: 'DELETE',
 				headers: {

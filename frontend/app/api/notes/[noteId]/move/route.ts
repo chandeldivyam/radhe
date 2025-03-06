@@ -4,7 +4,7 @@ import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
 
 export async function PATCH(
 	req: NextRequest,
-	{ params }: { params: { noteId: string } }
+	{ params }: { params: Promise<{ noteId: string }> }
 ) {
 	try {
 		const awaitedParams = await params;
