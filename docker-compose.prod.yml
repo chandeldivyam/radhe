@@ -163,6 +163,8 @@ services:
     restart: unless-stopped
     networks:
       - app_network
+    env_file:
+    - ./frontend/.env.production
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`app.${DOMAIN_NAME}`)"
