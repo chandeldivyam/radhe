@@ -1,9 +1,14 @@
 from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional, Tuple
 from app.models.note import Note
-from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse, NoteWSResponse
 import uuid
 from sqlalchemy import update, func, and_, or_
+import base64
+import logging
+import sqlalchemy
+
+logger = logging.getLogger(__name__)
 
 class NoteService:
     POSITION_GAP = 1000  # Gap between positions
@@ -459,3 +464,53 @@ class NoteService:
         db.refresh(note)
         
         return NoteResponse.model_validate(note)
+
+    @staticmethod
+    async def get_note_ws_content(
+        db: Session,
+        note_id: str,
+    ) -> Optional[NoteWSResponse]:
+        """Get note's WebSocket collaboration content"""
+        note = db.query(Note).filter(Note.id == note_id).first()
+        
+        if not note:
+            return None
+            
+        if not note.binary_content:
+            return NoteWSResponse(binary_content=None)
+            
+        try:
+            # Return the binary content directly as a list of integers
+            binary_data = base64.b64decode(note.binary_content)
+            return NoteWSResponse(binary_content=list(binary_data))
+        except Exception as e:
+            logger.error(f"Error decoding binary content: {str(e)}")
+            return NoteWSResponse(binary_content=None)
+
+    @staticmethod
+    async def update_note_ws_content(
+        db: Session,
+        note_id: str,
+        update_data: List[int],
+    ) -> None:
+        """Update note's WebSocket collaboration content"""
+        try:
+            # Convert the update array to bytes and store as base64
+            binary_data = bytes(update_data)
+            base64_content = base64.b64encode(binary_data).decode('utf-8')
+            
+            stmt = (
+                sqlalchemy.update(Note)
+                .where(Note.id == note_id)
+                .values(
+                    binary_content=base64_content,
+                    updated_at=func.now()
+                )
+            )
+            
+            db.execute(stmt)
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating binary content: {str(e)}")
+            raise

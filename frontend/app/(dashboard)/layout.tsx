@@ -36,7 +36,7 @@ export default function DashboardLayout({
 			/>
 			<div className="flex-1 flex overflow-hidden">
 				<SideNav open={sidebarOpen} onClose={handleSidebarClose} />
-				<main className="flex-1 overflow-auto">{children}</main>
+				<main className="flex-1">{children}</main>
 			</div>
 		</div>
 	);

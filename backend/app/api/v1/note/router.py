@@ -8,11 +8,14 @@ from app.schemas.note import (
     NoteResponse, 
     NoteMoveRequest,
     NoteListResponse,
-    NoteDetailResponse
+    NoteDetailResponse,
+    NoteWSResponse,
+    NoteWSUpdate
 )
 from app.api.utils.deps import get_current_user
 from app.api.v1.note.service import NoteService
 import logging
+import base64
 
 
 router = APIRouter(prefix="/notes")
@@ -165,4 +168,43 @@ async def patch_note(
         raise HTTPException(
             status_code=500, 
             detail="An error occurred while patching the note"
+        )
+
+@router.get("/ws/{note_id}", response_model=NoteWSResponse)
+async def get_note_ws_content(
+    note_id: str,
+    db: Session = Depends(get_db),
+):
+    """Get note content for WebSocket collaboration"""
+    try:
+        note = await NoteService.get_note_ws_content(db, note_id)
+        if not note:
+            raise HTTPException(status_code=404, detail="Note not found")
+        return note
+    except Exception as e:
+        logger.error(f"Error getting note WS content: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while getting note WS content"
+        )
+
+@router.post("/ws/{note_id}/update")
+async def update_note_ws_content(
+    note_id: str,
+    update_data: NoteWSUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update note content from WebSocket collaboration"""
+    try:
+        await NoteService.update_note_ws_content(
+            db,
+            note_id,
+            update_data.update
+        )
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Error updating note WS content: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while updating note WS content"
         )

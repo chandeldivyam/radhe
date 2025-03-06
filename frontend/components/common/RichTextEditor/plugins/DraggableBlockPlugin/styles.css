@@ -1,0 +1,104 @@
+/* src/components/RichTextEditor/plugins/DraggableBlockPlugin/styles.css */
+
+/* Draggable block menu container */
+.draggable-block-menu {
+	border: 1px solid hsl(var(--border));
+	background-color: hsl(var(--background));
+	border-radius: 4px;
+	padding: 2px 4px;
+	cursor: grab;
+	opacity: 1; /* Changed from 0 to make it visible initially */
+	position: absolute;
+	left: 0;
+	top: 12px;
+	will-change: transform;
+	transition: opacity 0.2s ease, background-color 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	min-height: 24px;
+	z-index: 20000;
+	pointer-events: all; /* Ensure the menu captures events */
+}
+
+/* Icon inside the menu */
+.draggable-block-menu .icon {
+	width: 16px;
+	height: 16px;
+	opacity: 0.7;
+	/* Use a simpler icon approach */
+	background-color: hsl(var(--foreground));
+	-webkit-mask-image: url('/draggable-block-menu.svg');
+	mask-image: url('/draggable-block-menu.svg');
+	mask-repeat: no-repeat;
+	-webkit-mask-repeat: no-repeat;
+	mask-position: center;
+	-webkit-mask-position: center;
+	mask-size: contain;
+	-webkit-mask-size: contain;
+}
+
+/* Hover & active states */
+.draggable-block-menu:hover {
+	background-color: hsl(var(--accent));
+	cursor: grab;
+}
+
+.draggable-block-menu:active {
+	cursor: grabbing;
+}
+
+/* The "target line" that shows drop position */
+.draggable-block-target-line {
+	pointer-events: none;
+	background: hsl(var(--primary));
+	height: 4px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	opacity: 1; /* Changed from 0 to make it visible */
+	will-change: transform;
+	transition: opacity 0.2s ease;
+}
+
+/* Add styles for the block itself */
+.selected-block {
+	background-color: hsl(var(--muted-foreground) / 0.1);
+	position: relative;
+	cursor: default;
+	/* Add padding to prevent content from touching the selection indicator */
+	padding: 4px;
+	padding-left: 28px;
+	/* Ensure smooth transitions */
+	transition: background-color 0.2s ease;
+}
+
+.selected-block::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 3px;
+	background-color: hsl(var(--accent));
+	/* Add a subtle shadow for depth */
+	box-shadow: 1px 0 2px rgba(0, 0, 0, 0.05);
+	/* Ensure the indicator is above content */
+	z-index: 1;
+	/* Add smooth transition for the indicator */
+	transition: opacity 0.2s ease;
+}
+
+/* Improve dragging state */
+.dragging {
+	opacity: 0.5;
+	transition: opacity 0.2s ease;
+}
+
+.selected-block.dragging {
+	opacity: 0.5;
+	background-color: hsl(var(--accent) / 0.1);
+	/* Add a subtle outline while dragging */
+	outline: 1px solid hsl(var(--accent) / 0.2);
+}

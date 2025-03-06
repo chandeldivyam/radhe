@@ -68,6 +68,7 @@ build/
 # NPM-related
 package-lock.json
 yarn.lock
+.pnpm-store/
 
 # ==========================================
 # Docker
@@ -79,7 +80,6 @@ docker-compose.yml # If you don't want to check in this file
 *.dockerignore
 .dockerenv
 .docker
-*/Dockerfile
 
 # ==========================================
 # Environment Variables

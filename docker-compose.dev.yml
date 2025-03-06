@@ -151,7 +151,21 @@ services:
       - backend
     networks:
       - app_network
-      
+
+  collaboration:
+    build: 
+      context: ./collaboration_service
+      dockerfile: Dockerfile
+    ports:
+      - "1616:1234"
+    volumes:
+      - ./collaboration_service:/app
+      - /app/node_modules
+    networks:
+      - app_network
+    depends_on:
+      - backend
+
 networks:
   app_network:
     driver: bridge
