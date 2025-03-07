@@ -76,6 +76,7 @@ export async function fetchWithAuth(
     return originalRequest();
   } catch (error) {
     // If refresh fails, clear the queue and rethrow
+    console.error('Error refreshing token:', error);
     processQueue(error instanceof Error ? error : new Error('Unknown error'));
     throw error;
   } finally {
