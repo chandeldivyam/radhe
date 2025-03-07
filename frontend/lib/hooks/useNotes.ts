@@ -198,8 +198,11 @@ export function useNotes() {
 				// Check if unmounted
 				if (!isMounted) return;
 
-				const error = await response.json();
-				if (error.requiresLogin) {
+				// Read the response body ONCE and store it
+				const responseData = await response.json();
+				
+				// Check for login requirement
+				if (responseData.requiresLogin) {
 					// Handle unauthorized at the hook level
 					router.push('/login');
 					return;
@@ -207,7 +210,8 @@ export function useNotes() {
 
 				if (!response.ok) throw new Error('Failed to load note');
 
-				const note = await response.json();
+				// Use the already parsed responseData instead of parsing again
+				const note = responseData;
 
 				// Check if unmounted again
 				if (!isMounted) return;

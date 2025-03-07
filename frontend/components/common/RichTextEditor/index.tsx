@@ -25,6 +25,7 @@ import * as Y from "yjs";
 import { type Provider } from "@lexical/yjs";
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/provider";
 import { useEffect, useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
 
 interface RichTextEditorProps {
@@ -37,15 +38,18 @@ interface RichTextEditorProps {
 const websocket = new HocuspocusProviderWebsocket({
   url: process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'ws://localhost:1616',
   connect: false,
+  delay: 1000,
 });
 
 
 function createWebsocketProvider({ 
   id, 
-  yjsDocMap 
+  yjsDocMap,
+  setIsLoading
 }: { 
   id: string; 
   yjsDocMap: Map<string, Y.Doc>; 
+  setIsLoading: (isLoading: boolean) => void;
 }) {
   let doc = yjsDocMap.get(id);
   
@@ -58,8 +62,11 @@ function createWebsocketProvider({
     websocketProvider: websocket,
     name: id,
     document: doc,
-    onSynced: () => {
-      console.log(`Document ${id} synced`);
+    onSynced: ({ state }) => {
+      if (state) {
+        console.log(`Document ${id} synced`);
+        setIsLoading(false);
+      }
     },
     onStatus: ({ status }) => {
       console.log(`Connection status: ${status}`);
@@ -81,13 +88,13 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
   const cursorsContainerRef = useRef<HTMLDivElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
 		if (editorContainerRef.current) {
 			setIsEditorReady(true);
 		}
 	}, []);
-
 
   return (
     <div className="relative">
@@ -99,6 +106,11 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
         }}
       >
         <div className="editor-container" ref={editorContainerRef} style={{position: 'relative'}}>
+              {isLoading && (
+                <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              )}
               <RichTextPlugin
                 contentEditable={<ContentEditable style={{position: 'relative', marginLeft: '35px'}}/>}
                 ErrorBoundary={LexicalErrorBoundary}
@@ -123,7 +135,7 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
                 id={noteId}
                 providerFactory={(id, yjsDocMap) => {
                   if (!providerRef.current) {
-                    const { provider, websocketProvider } = createWebsocketProvider({ id, yjsDocMap });
+                    const { provider, websocketProvider } = createWebsocketProvider({ id, yjsDocMap, setIsLoading });
                     providerRef.current = provider;
                     websocketProviderRef.current = websocketProvider;
                     return providerRef.current;

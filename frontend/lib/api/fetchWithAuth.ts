@@ -7,6 +7,12 @@ let failedRequestsQueue: Array<() => void> = [];
 
 // Process all queued requests with the new token
 const processQueue = (error: Error | null) => {
+  if (error) {
+    failedRequestsQueue = [];
+    return;
+  }
+  
+  // If no error, process all queued requests
   failedRequestsQueue.forEach(callback => callback());
   failedRequestsQueue = [];
 };
@@ -76,7 +82,6 @@ export async function fetchWithAuth(
     return originalRequest();
   } catch (error) {
     // If refresh fails, clear the queue and rethrow
-    console.error('Error refreshing token:', error);
     processQueue(error instanceof Error ? error : new Error('Unknown error'));
     throw error;
   } finally {
