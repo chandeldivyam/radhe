@@ -2,6 +2,8 @@ import useSWR from 'swr';
 import type { UserResponse } from '@/types/auth';
 import type { AddMemberFormData } from '@/lib/schemas/member';
 import { toast } from '@/lib/hooks/use-toast';
+import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { useRouter } from 'next/navigation';
 
 const fetcher = async (url: string) => {
 	const response = await fetch(url);
@@ -13,6 +15,7 @@ const fetcher = async (url: string) => {
 };
 
 export function useMembers() {
+	const router = useRouter();
 	const {
 		data: members,
 		error,
@@ -24,7 +27,7 @@ export function useMembers() {
 
 	const addMember = async (data: AddMemberFormData) => {
 		try {
-			const response = await fetch('/api/users/add', {
+			const response = await fetchWithAuth('/api/users/add', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(data),
@@ -32,6 +35,9 @@ export function useMembers() {
 
 			if (!response.ok) {
 				const error = await response.json();
+				if (error.requiresLogin) {
+					router.push('/login');
+				}
 				throw new Error(error.error || 'Failed to add member');
 			}
 
@@ -64,7 +70,7 @@ export function useMembers() {
 				false
 			);
 
-			const response = await fetch(`/api/users/${userId}/delete`, {
+			const response = await fetchWithAuth(`/api/users/${userId}/delete`, {
 				method: 'DELETE',
 			});
 
@@ -72,6 +78,9 @@ export function useMembers() {
 				// Revert the optimistic update if the deletion failed
 				await mutate();
 				const error = await response.json();
+				if (error.requiresLogin) {
+					router.push('/login');
+				}
 				throw new Error(error.error || 'Failed to delete member');
 			}
 

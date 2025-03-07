@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function POST(request: Request) {
 	try {
@@ -7,10 +8,7 @@ export async function POST(request: Request) {
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 }
-			);
+			return createUnauthorizedResponse();
 		}
 
 		const body = await request.json();
@@ -28,6 +26,9 @@ export async function POST(request: Request) {
 		);
 
 		if (!response.ok) {
+			if (response.status === 401) {
+				return createUnauthorizedResponse();
+			}
 			const error = await response.json();
 			return NextResponse.json(
 				{ error: error.detail || 'Failed to add member' },

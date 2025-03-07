@@ -3,6 +3,7 @@ import { useNotesStore } from '@/lib/store/useNotesStore';
 import { CreateNoteData, UpdateNoteData } from '@/types/note';
 import { useToast } from '@/lib/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -43,14 +44,14 @@ export function useNotes() {
 				actions.setError(null);
 
 				const skip = page * ITEMS_PER_PAGE;
-				const response = await fetch(
+				const response = await fetchWithAuth(
 					`/api/notes/root?skip=${skip}&limit=${ITEMS_PER_PAGE}`
 				);
 
 				if (!response.ok) {
-					if (response.status === 401) {
-						window.location.href = '/login';
-						return;
+					const error = await response.json();
+					if (error.requiresLogin) {
+						router.push('/login');
 					}
 					throw new Error('Failed to load notes');
 				}
@@ -98,9 +99,17 @@ export function useNotes() {
 
 			try {
 				store.setLoadingState(parentId, true);
-				const response = await fetch(`/api/notes/${parentId}/children`);
+				const response = await fetchWithAuth(
+					`/api/notes/${parentId}/children`
+				);
 
-				if (!response.ok) throw new Error('Failed to load children');
+				if (!response.ok) {
+					const error = await response.json();
+					if (error.requiresLogin) {
+						router.push('/login');
+					}
+					throw new Error('Failed to load children');
+				}
 
 				const children = await response.json();
 				store.addChildNotes(parentId, children);
@@ -121,7 +130,7 @@ export function useNotes() {
 	const createNote = useCallback(
 		async (data: CreateNoteData) => {
 			try {
-				const response = await fetch('/api/notes', {
+				const response = await fetchWithAuth('/api/notes', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(data),
@@ -131,8 +140,8 @@ export function useNotes() {
 					const errorData = await response.json();
 					
 					// Handle auth redirect on client side
-					if (response.status === 401 && errorData.redirect) {
-					  router.push(errorData.redirect);
+					if (errorData.requiresLogin) {
+					  router.push('/login');
 					  return;
 					}
 					
@@ -184,12 +193,13 @@ export function useNotes() {
 				store.setIsLoadingNote(true);
 				store.setError(null);
 
-				const response = await fetch(`/api/notes/${noteId}`);
+				const response = await fetchWithAuth(`/api/notes/${noteId}`);
 
 				// Check if unmounted
 				if (!isMounted) return;
 
-				if (response.status === 401) {
+				const error = await response.json();
+				if (error.requiresLogin) {
 					// Handle unauthorized at the hook level
 					router.push('/login');
 					return;
@@ -232,13 +242,19 @@ export function useNotes() {
 	const updateNote = useCallback(
 		async (noteId: string, updates: UpdateNoteData) => {
 			try {
-				const response = await fetch(`/api/notes/${noteId}`, {
+				const response = await fetchWithAuth(`/api/notes/${noteId}`, {
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(updates),
 				});
 
-				if (!response.ok) throw new Error('Failed to update note');
+				if (!response.ok) {
+					const error = await response.json();
+					if (error.requiresLogin) {
+						router.push('/login');
+					}
+					throw new Error('Failed to update note');
+				}
 
 				const updatedNote = await response.json();
 				store.setCurrentNote(updatedNote);
@@ -262,11 +278,17 @@ export function useNotes() {
 	const deleteNote = useCallback(
 		async (noteId: string, parentId: string | null) => {
 			try {
-				const response = await fetch(`/api/notes/${noteId}`, {
+				const response = await fetchWithAuth(`/api/notes/${noteId}`, {
 					method: 'DELETE',
 				});
 
-				if (!response.ok) throw new Error('Failed to delete note');
+				if (!response.ok) {
+					const error = await response.json();
+					if (error.requiresLogin) {
+						router.push('/login');
+					}
+					throw new Error('Failed to delete note');
+				}
 
 				store.deleteNote(noteId, parentId);
 
@@ -314,17 +336,25 @@ export function useNotes() {
 					oldParentId: sourceNote.parent_id,
 					...moveData,
 				});
-				const response = await fetch(`/api/notes/${noteId}/move`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
+				const response = await fetchWithAuth(
+					`/api/notes/${noteId}/move`,
+					{
+						method: 'PATCH',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
 						new_parent_id: moveData.newParentId,
 						before_id: moveData.beforeId,
 						after_id: moveData.afterId,
 					}),
 				});
 
-				if (!response.ok) throw new Error('Failed to move note');
+				if (!response.ok) {
+					const error = await response.json();
+					if (error.requiresLogin) {
+						router.push('/login');
+					}
+					throw new Error('Failed to move note');
+				}
 
 				const updatedNote = await response.json();
 

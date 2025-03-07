@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function GET() {
 	try {
@@ -8,11 +8,7 @@ export async function GET() {
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 }
-			);
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
@@ -26,7 +22,7 @@ export async function GET() {
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
+				return createUnauthorizedResponse();
 			}
 			return NextResponse.json(
 				{ error: 'Failed to fetch members' },

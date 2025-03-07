@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function DELETE(
 	request: Request,
@@ -12,10 +12,7 @@ export async function DELETE(
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 }
-			);
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
@@ -30,7 +27,7 @@ export async function DELETE(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
+				return createUnauthorizedResponse();
 			}
 			return NextResponse.json(
 				{ error: 'Failed to delete member' },

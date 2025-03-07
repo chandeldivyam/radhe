@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function PATCH(
 	req: NextRequest,
@@ -12,8 +12,7 @@ export async function PATCH(
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const body = await req.json();
@@ -33,11 +32,7 @@ export async function PATCH(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
-				return Response.json(
-					{ error: 'Unauthorized' },
-					{ status: 401 }
-				);
+				return createUnauthorizedResponse();
 			}
 			return Response.json(
 				{ error: 'Failed to move note' },

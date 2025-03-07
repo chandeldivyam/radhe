@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -12,8 +12,7 @@ export async function GET(req: NextRequest) {
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
+				return createUnauthorizedResponse();
 			}
 			throw new Error('Failed to fetch root notes');
 		}
