@@ -25,9 +25,8 @@ export async function POST(req: NextRequest) {
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
 				return Response.json(
-					{ error: 'Unauthorized' },
+					{ error: 'Unauthorized', redirect: '/login' },
 					{ status: 401 }
 				);
 			}

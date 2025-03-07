@@ -127,7 +127,17 @@ export function useNotes() {
 					body: JSON.stringify(data),
 				});
 
-				if (!response.ok) throw new Error('Failed to create note');
+				if (!response.ok) {
+					const errorData = await response.json();
+					
+					// Handle auth redirect on client side
+					if (response.status === 401 && errorData.redirect) {
+					  router.push(errorData.redirect);
+					  return;
+					}
+					
+					throw new Error(errorData.error || 'Failed to create note');
+				}
 
 				const newNote = await response.json();
 
