@@ -794,9 +794,9 @@ function DraggableBlockPlugin({
   return (
     <DraggableBlockPlugin_EXPERIMENTAL
       anchorElem={anchorElem}
-      // @ts-ignore
+      // @ts-expect-error - menuRef prop type is not properly defined in the experimental component
       menuRef={menuRef}
-      // @ts-ignore
+      // @ts-expect-error - targetLineRef prop type is not properly defined in the experimental component
       targetLineRef={targetLineRef}
       selectedBlocks={selectedBlocks}
       onBlockSelection={handleBlockSelection}

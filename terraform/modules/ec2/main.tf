@@ -38,7 +38,7 @@ resource "aws_instance" "app" {
   key_name                   = aws_key_pair.deployer.key_name
 
   root_block_device {
-    volume_size = 50  # Increased for running multiple services
+    volume_size = 50
     volume_type = "gp3"
     encrypted   = true
   }
@@ -53,6 +53,9 @@ resource "aws_instance" "app" {
               # Update system
               apt-get update
               apt-get upgrade -y
+
+              # Create test marker to force instance replacement - $(date +%s)
+              echo "Instance created on $(date)" > /root/.instance_created_at
 
               # Create and enable swap
               fallocate -l 6G /swapfile
@@ -74,28 +77,31 @@ resource "aws_instance" "app" {
                 lsb-release \
                 git
 
-              # Install Docker
+              # Install Docker and Docker Compose
               curl -fsSL https://get.docker.com -o get-docker.sh
               sh get-docker.sh
-
-              # Install Docker Compose
               curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               chmod +x /usr/local/bin/docker-compose
-
-              # Create docker user group and add ubuntu user
               usermod -aG docker ubuntu
 
-              # Create directories for services
-              mkdir -p /opt/radhe/{traefik,data}
-              chown -R ubuntu:ubuntu /opt/radhe
+              # Create directories for data storage on root volume
+              mkdir -p /mnt/traefik
+              mkdir -p /mnt/postgres
+              mkdir -p /mnt/minio
 
-              # Install basic monitoring tools
-              apt-get install -y \
-                htop \
-                iotop \
-                net-tools \
-                tcpdump \
-                nmap
+              # Set proper permissions
+              chown -R 1000:1000 /mnt/traefik
+              chmod -R 700 /mnt/traefik
+              chown -R 999:999 /mnt/postgres
+              chmod -R 700 /mnt/postgres
+              chown -R 1000:1000 /mnt/minio
+              chmod -R 700 /mnt/minio
+
+              # Install monitoring tools
+              apt-get install -y htop iotop net-tools tcpdump nmap
+              # Install host command needed for DNS checks
+              apt-get install -y dnsutils
+              
               EOF
 
   tags = {

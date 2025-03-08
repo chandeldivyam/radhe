@@ -26,70 +26,20 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - traefik:/etc/traefik
+      - /mnt/traefik:/etc/traefik
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - app_network
 
   ###########################################################################
-  # 2. OPENSEARCH WITH SECURITY
-  ###########################################################################
-  opensearch:
-    image: opensearchproject/opensearch:2
-    container_name: opensearch
-    restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - opensearch_data:/usr/share/opensearch/data
-      # If you have custom config files:
-      # - ./opensearch/config/opensearch.yml:/usr/share/opensearch/config/opensearch.yml
-      # - ./opensearch/config/internal_users.yml:/usr/share/opensearch/plugins/opensearch-security/securityconfig/internal_users.yml
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.opensearch.rule=Host(`${OPENSEARCH_URL}`)"
-      - "traefik.http.routers.opensearch.entrypoints=websecure"
-      - "traefik.http.routers.opensearch.tls.certresolver=myresolver"
-      - "traefik.http.services.opensearch.loadbalancer.server.port=9200"
-
-  ###########################################################################
-  # 3. OPENSEARCH DASHBOARDS
-  ###########################################################################
-  opensearch-dashboards:
-    image: opensearchproject/opensearch-dashboards:2
-    container_name: opensearch-dashboards
-    environment:
-      - OPENSEARCH_HOSTS=["https://opensearch:9200"]
-    depends_on:
-      - opensearch
-    networks:
-      - app_network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.opensearchdash.rule=Host(`${OPENSEARCH_DASHBOARD_URL}`)"
-      - "traefik.http.routers.opensearchdash.entrypoints=websecure"
-      - "traefik.http.routers.opensearchdash.tls.certresolver=myresolver"
-      - "traefik.http.services.opensearchdash.loadbalancer.server.port=5601"
-
-  ###########################################################################
-  # 4. POSTGRES
+  # 2. POSTGRES
   ###########################################################################
   db:
     image: pgvector/pgvector:pg16
     container_name: postgres
     restart: unless-stopped
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /mnt/postgres:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -116,8 +66,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      opensearch:
-        condition: service_started
     networks:
       - app_network
     labels:
@@ -143,7 +91,7 @@ services:
     image: minio/minio
     restart: unless-stopped
     volumes:
-      - minio_data:/data
+      - /mnt/minio:/data
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
@@ -215,6 +163,8 @@ services:
     restart: unless-stopped
     networks:
       - app_network
+    env_file:
+    - ./frontend/.env.production
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`app.${DOMAIN_NAME}`)"
@@ -222,12 +172,32 @@ services:
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
 
+  ###########################################################################
+  # 11. COLLABORATION SERVICE
+  ###########################################################################
+  collaboration:
+    build:
+      context: ./collaboration_service
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - ./collaboration_service/.env
+    networks:
+      - app_network
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.collaboration.rule=Host(`colab.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.collaboration.entrypoints=websecure"
+      - "traefik.http.routers.collaboration.tls.certresolver=myresolver"
+      - "traefik.http.services.collaboration.loadbalancer.server.port=1234"
+
 networks:
   app_network:
     driver: bridge
 
 volumes:
   traefik:
-  opensearch_data:
   postgres_data:
   minio_data:

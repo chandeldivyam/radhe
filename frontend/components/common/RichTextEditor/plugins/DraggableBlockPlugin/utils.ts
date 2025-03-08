@@ -202,8 +202,10 @@ export class Rectangle {
   }
 }
 
-export function calculateZoomLevel(element: Element | null): number {
-  let zoom = 1;
+export function calculateZoomLevel(_element: Element | null): number {
+  const zoom = 1;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const element = _element;
   // if (needsManualZoom()) {
   //   while (element) {
   //     zoom *= Number(window.getComputedStyle(element).getPropertyValue('zoom'));

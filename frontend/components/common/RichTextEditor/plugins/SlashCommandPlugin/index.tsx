@@ -19,7 +19,9 @@ export function SlashCommandPlugin(): JSX.Element {
     minLength: 0,
   });
 
-  const calculatePosition = useCallback((element: HTMLElement) => {
+  const calculatePosition = useCallback((_element: HTMLElement) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const element = _element; // Keep the parameter but mark it as intentionally unused
     const domSelection = window.getSelection();
     if (!domSelection?.rangeCount) return null;
 
@@ -64,6 +66,8 @@ export function SlashCommandPlugin(): JSX.Element {
         if (nodeToRemove) {
           nodeToRemove.remove();
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _matchingString = matchingString;
         selectedOption.execute(editor);
         closeMenu();
       });

@@ -1,23 +1,21 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 export async function DELETE(
 	request: Request,
-	{ params }: { params: { userId: string } }
+	{ params }: { params: Promise<{ userId: string }> }
 ) {
 	try {
+		const awaitedParams = await params;
 		const cookieStore = await cookies();
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			return NextResponse.json(
-				{ error: 'Unauthorized' },
-				{ status: 401 }
-			);
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
-			`${process.env.API_URL}/api/v1/users/${params.userId}`,
+			`${process.env.API_URL}/api/v1/users/${awaitedParams.userId}`,
 			{
 				method: 'DELETE',
 				headers: {
@@ -28,7 +26,7 @@ export async function DELETE(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
+				return createUnauthorizedResponse();
 			}
 			const error = await response.json();
 			return NextResponse.json(

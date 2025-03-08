@@ -1,4 +1,4 @@
-import { EditorState, LexicalEditor } from 'lexical';
+import { EditorState } from 'lexical';
 import { Provider } from '@lexical/yjs';
 
 export interface EditorConfig {

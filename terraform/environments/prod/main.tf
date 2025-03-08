@@ -31,7 +31,7 @@ module "networking" {
     availability_zone  = "${var.aws_region}a"
     ssh_allowed_cidr   = var.ssh_allowed_cidr
 }
-  
+
 module "ec2" {
     source = "../../modules/ec2"
   

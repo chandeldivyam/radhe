@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function POST(req: NextRequest) {
 	try {
@@ -8,13 +8,12 @@ export async function POST(req: NextRequest) {
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const body = await req.json();
 
-		const response = await fetch(`${process.env.API_URL}/api/v1/notes`, {
+		const response = await fetch(`${process.env.API_URL}/api/v1/notes/`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -25,11 +24,7 @@ export async function POST(req: NextRequest) {
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
-				return Response.json(
-					{ error: 'Unauthorized' },
-					{ status: 401 }
-				);
+				return createUnauthorizedResponse();
 			}
 			return Response.json(
 				{ error: 'Failed to create note' },

@@ -61,6 +61,7 @@ You are an expert in **Python, FastAPI, scalable API development, TypeScript, Re
   - Minimize `use client`, `useEffect`, and `setState` hooks. Favor server-side rendering where possible.  
   - Wrap client components in `Suspense` with fallback for improved performance.
 - We are utilizing feature based folder structure for the frontend. So, ideally we should have components related to a feature in /components/features/featureName folder.
+- Training slashes handling by properly analyzing the backend router is critical. This led to an issue in production which was not there in development mode
 
 ### Performance Optimization
 

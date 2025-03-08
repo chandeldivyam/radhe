@@ -33,16 +33,24 @@ interface RichTextEditorProps {
   editable?: boolean;
 }
 
-// Create a shared websocket instance
+// Define extended provider interface with our custom properties
+interface EnhancedProvider extends Provider {
+  _syncTimeout?: NodeJS.Timeout;
+  _retryCount?: number;
+  _isInitialSync?: boolean;
+}
+
+// Update the websocket configuration
 const websocket = new HocuspocusProviderWebsocket({
   url: process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'ws://localhost:1616',
   connect: false,
+  delay: 1000,
 });
 
-
+// Create a provider factory with proper typing
 function createWebsocketProvider({ 
   id, 
-  yjsDocMap 
+  yjsDocMap,
 }: { 
   id: string; 
   yjsDocMap: Map<string, Y.Doc>; 
@@ -54,29 +62,79 @@ function createWebsocketProvider({
     yjsDocMap.set(id, doc);
   }
 
-  const provider = new HocuspocusProvider({
+  // First create the provider with minimal configuration
+  const hocusProvider = new HocuspocusProvider({
     websocketProvider: websocket,
     name: id,
     document: doc,
-    onSynced: () => {
+  });
+
+  // Store reference as enhanced provider
+  const enhancedProvider = hocusProvider as unknown as EnhancedProvider;
+  
+  // Add a flag to track initial connection state
+  enhancedProvider._isInitialSync = true;
+  
+  // Then set up the callbacks separately
+  hocusProvider.on('synced', ({ state }: { state: boolean }) => {
+    if (state) {
       console.log(`Document ${id} synced`);
-    },
-    onStatus: ({ status }) => {
-      console.log(`Connection status: ${status}`);
-    },
-    onDisconnect: () => {
-      console.log('Disconnected from collaboration server');
-    },
+      
+      // Clear any pending timeouts
+      if (enhancedProvider._syncTimeout) {
+        clearTimeout(enhancedProvider._syncTimeout);
+        enhancedProvider._syncTimeout = undefined;
+      }
+      
+      // Mark that we've completed initial sync
+      enhancedProvider._isInitialSync = false;
+    }
+  });
+  
+  hocusProvider.on('status', ({ status }: { status: string }) => {
+    console.log(`Connection status: ${status}`);
+    
+    if (status === 'connected') {
+      // Set a timeout for sync completion
+      if (!enhancedProvider._syncTimeout) {
+        // Use shorter timeout for initial connection, longer for subsequent ones
+        const timeoutDuration = enhancedProvider._isInitialSync ? 400 : 5000;
+        
+        enhancedProvider._syncTimeout = setTimeout(() => {
+          console.warn(`Document sync timed out after ${timeoutDuration}ms - forcing UI ready state`);
+          
+          // Only force reconnection on initial sync issues
+          if (enhancedProvider._isInitialSync) {
+            hocusProvider.disconnect();
+            setTimeout(() => {
+              console.log('Attempting reconnection after timeout');
+              hocusProvider.connect();
+            }, 200); // Shorter reconnection delay for initial sync
+          }
+          
+          // Mark that we've passed initial sync phase regardless
+          enhancedProvider._isInitialSync = false;
+        }, timeoutDuration);
+      }
+    }
+  });
+  
+  hocusProvider.on('disconnect', () => {
+    console.log('Disconnected from collaboration server');
+  });
+  
+  hocusProvider.on('close', ({ event }: { event: CloseEvent }) => {
+    console.warn('WebSocket connection closed:', event?.code, event?.reason);
   });
 
   return {
-    provider: provider as unknown as Provider,
+    provider: enhancedProvider as unknown as Provider,
     websocketProvider: websocket
   };
 }
 
 export function RichTextEditor({ noteId, username, editable = true }: RichTextEditorProps) {
-  const providerRef = useRef<Provider | null>(null);
+  const providerRef = useRef<EnhancedProvider | null>(null);
   const websocketProviderRef = useRef<HocuspocusProviderWebsocket | null>(null);
   const cursorsContainerRef = useRef<HTMLDivElement>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -87,7 +145,6 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
 			setIsEditorReady(true);
 		}
 	}, []);
-
 
   return (
     <div className="relative">
@@ -124,11 +181,11 @@ export function RichTextEditor({ noteId, username, editable = true }: RichTextEd
                 providerFactory={(id, yjsDocMap) => {
                   if (!providerRef.current) {
                     const { provider, websocketProvider } = createWebsocketProvider({ id, yjsDocMap });
-                    providerRef.current = provider;
+                    providerRef.current = provider as EnhancedProvider;
                     websocketProviderRef.current = websocketProvider;
-                    return providerRef.current;
+                    return providerRef.current as Provider;
                   }
-                  return providerRef.current;
+                  return providerRef.current as Provider;
                 }}
                 shouldBootstrap={true}
                 username={username}

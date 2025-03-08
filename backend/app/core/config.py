@@ -41,15 +41,6 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
 
-    # OpenSearch
-    OPENSEARCH_HOST: str
-    OPENSEARCH_PORT: str
-    # optional
-    OPENSEARCH_USER: Optional[str] = None
-    OPENSEARCH_INITIAL_ADMIN_PASSWORD: Optional[str] = None
-    OPENSEARCH_DASHBOARD_URL: Optional[str] = None
-    OPENSEARCH_URL: Optional[str] = None
-
     # Flower
     ENABLE_FLOWER: bool = False
     FLOWER_PORT: int = 5555

@@ -27,3 +27,4 @@ variable "project_name" {
     type        = string
     description = "SSH public key for instance access"
   }
+  

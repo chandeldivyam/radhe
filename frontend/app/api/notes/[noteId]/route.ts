@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
-import { handleUnauthorized } from '@/lib/auth/handleUnauthorized';
+import { createUnauthorizedResponse } from '@/lib/auth/handleUnauthorized';
 
 export async function GET(
 	req: NextRequest,
-	{ params }: { params: { noteId: string } }
+	{ params }: { params: Promise<{ noteId: string }> }
 ) {
 	try {
 		const awaitedParams = await params;
@@ -13,8 +13,7 @@ export async function GET(
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
@@ -28,11 +27,7 @@ export async function GET(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
-				return Response.json(
-					{ error: 'Unauthorized' },
-					{ status: 401 }
-				);
+				return createUnauthorizedResponse();
 			}
 			return Response.json(
 				{ error: 'Failed to fetch note' },
@@ -53,7 +48,7 @@ export async function GET(
 
 export async function PATCH(
 	req: NextRequest,
-	{ params }: { params: { noteId: string } }
+	{ params }: { params: Promise<{ noteId: string }> }
 ) {
 	try {
 		const awaitedParams = await params;
@@ -61,8 +56,7 @@ export async function PATCH(
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const body = await req.json();
@@ -81,11 +75,7 @@ export async function PATCH(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
-				return Response.json(
-					{ error: 'Unauthorized' },
-					{ status: 401 }
-				);
+				return createUnauthorizedResponse();
 			}
 			return Response.json(
 				{ error: 'Failed to update note' },
@@ -106,7 +96,7 @@ export async function PATCH(
 
 export async function DELETE(
 	req: NextRequest,
-	{ params }: { params: { noteId: string } }
+	{ params }: { params: Promise<{ noteId: string }> }
 ) {
 	try {
 		const awaitedParams = await params;
@@ -114,8 +104,7 @@ export async function DELETE(
 		const accessToken = cookieStore.get('access_token');
 
 		if (!accessToken) {
-			await handleUnauthorized();
-			return Response.json({ error: 'Unauthorized' }, { status: 401 });
+			return createUnauthorizedResponse();
 		}
 
 		const response = await fetch(
@@ -130,11 +119,7 @@ export async function DELETE(
 
 		if (!response.ok) {
 			if (response.status === 401) {
-				await handleUnauthorized();
-				return Response.json(
-					{ error: 'Unauthorized' },
-					{ status: 401 }
-				);
+				return createUnauthorizedResponse();
 			}
 			return Response.json(
 				{ error: 'Failed to delete note' },

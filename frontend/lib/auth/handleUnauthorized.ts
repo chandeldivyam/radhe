@@ -1,15 +1,24 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 
 export async function handleUnauthorized() {
-	try {
-		const cookieStore = await cookies();
-		cookieStore.delete('access_token');
-		cookieStore.delete('refresh_token');
-		cookieStore.delete('organization_id');
-		redirect('/login');
-	} catch (error) {
-		console.error('Error handling unauthorized:', error);
-		redirect('/login');
-	}
+	const cookieStore = await cookies();
+	cookieStore.delete('access_token');
+	cookieStore.delete('refresh_token');
+	cookieStore.delete('organization_id');
+	
+	// Instead of redirecting, return a boolean indicating success
+	return true;
+}
+
+// Add a new function for API routes
+export function createUnauthorizedResponse() {
+	return Response.json(
+		{ error: 'Unauthorized', redirect: '/login' },
+		{ 
+			status: 401,
+			headers: {
+				'Location': '/login'
+			}
+		}
+	);
 }

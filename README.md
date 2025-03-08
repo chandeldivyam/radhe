@@ -22,6 +22,7 @@ docker-compose -f docker-compose.dev.yml logs -f frontend backend
 export AWS_ACCESS_KEY_ID='your_access_key'
 export AWS_SECRET_ACCESS_KEY='your_secret_key'
 ```
+```
 
 2. Setup terraform.tfvars file in terraform/environments/prod
 
@@ -46,7 +47,8 @@ ssh -i ~/.ssh/radhe-prod.pem ubuntu@12.87.11.11
 3. `cd radhe`
 4. Create a .env file in root directory -- Check .env.example for reference
 5. Create a .env.production file in frontend directory -- Check frontend/.env.example for reference
-6. Run the docker compose file
+6. Create a .env file for collaboration_service
+7. Run the docker compose file
 ```
 docker-compose -f docker-compose.prod.yml up --build -d
 ```
