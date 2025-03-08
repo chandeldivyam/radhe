@@ -12,7 +12,9 @@
 	left: 0;
 	top: 12px;
 	will-change: transform;
-	transition: opacity 0.2s ease, background-color 0.2s ease;
+	transition:
+		opacity 0.2s ease,
+		background-color 0.2s ease;
 	display: flex;
 	align-items: center;
 	justify-content: center;

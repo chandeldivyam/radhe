@@ -138,13 +138,13 @@ export function useNotes() {
 
 				if (!response.ok) {
 					const errorData = await response.json();
-					
+
 					// Handle auth redirect on client side
 					if (errorData.requiresLogin) {
-					  router.push('/login');
-					  return;
+						router.push('/login');
+						return;
 					}
-					
+
 					throw new Error(errorData.error || 'Failed to create note');
 				}
 
@@ -200,7 +200,7 @@ export function useNotes() {
 
 				// Read the response body ONCE and store it
 				const responseData = await response.json();
-				
+
 				// Check for login requirement
 				if (responseData.requiresLogin) {
 					// Handle unauthorized at the hook level
@@ -346,11 +346,12 @@ export function useNotes() {
 						method: 'PATCH',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
-						new_parent_id: moveData.newParentId,
-						before_id: moveData.beforeId,
-						after_id: moveData.afterId,
-					}),
-				});
+							new_parent_id: moveData.newParentId,
+							before_id: moveData.beforeId,
+							after_id: moveData.afterId,
+						}),
+					}
+				);
 
 				if (!response.ok) {
 					const error = await response.json();

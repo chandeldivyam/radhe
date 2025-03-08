@@ -46,6 +46,7 @@ public/workbox-*.js
 /pnpm-workspace.yaml
 /pnpm-*.yaml
 /package.json
+/.pnpm-store*
 
 # Misc
 .DS_Store
