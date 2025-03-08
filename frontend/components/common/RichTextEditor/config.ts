@@ -8,23 +8,23 @@ import { CodeNode, CodeHighlightNode } from '@lexical/code';
 import { theme } from './theme';
 
 export const editorConfig: InitialConfigType = {
-    namespace: 'notes',
-    editorState: null,
-    theme: theme,
-    nodes: [
-        HeadingNode,
-        QuoteNode,
-        ListItemNode,
-        ListNode,
-        LinkNode,
-        AutoLinkNode,
-        ParagraphNode,
-        TextNode,
-        HorizontalRuleNode,
-        CodeNode,
-        CodeHighlightNode
-    ],
-    onError: (error: Error) => {
-        console.error(error);
-    },
-}
+	namespace: 'notes',
+	editorState: null,
+	theme: theme,
+	nodes: [
+		HeadingNode,
+		QuoteNode,
+		ListItemNode,
+		ListNode,
+		LinkNode,
+		AutoLinkNode,
+		ParagraphNode,
+		TextNode,
+		HorizontalRuleNode,
+		CodeNode,
+		CodeHighlightNode,
+	],
+	onError: (error: Error) => {
+		console.error(error);
+	},
+};

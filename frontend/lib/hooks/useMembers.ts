@@ -70,9 +70,12 @@ export function useMembers() {
 				false
 			);
 
-			const response = await fetchWithAuth(`/api/users/${userId}/delete`, {
-				method: 'DELETE',
-			});
+			const response = await fetchWithAuth(
+				`/api/users/${userId}/delete`,
+				{
+					method: 'DELETE',
+				}
+			);
 
 			if (!response.ok) {
 				// Revert the optimistic update if the deletion failed
