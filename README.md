@@ -47,7 +47,8 @@ ssh -i ~/.ssh/radhe-prod.pem ubuntu@12.87.11.11
 3. `cd radhe`
 4. Create a .env file in root directory -- Check .env.example for reference
 5. Create a .env.production file in frontend directory -- Check frontend/.env.example for reference
-6. Run the docker compose file
+6. Create a .env file for collaboration_service
+7. Run the docker compose file
 ```
 docker-compose -f docker-compose.prod.yml up --build -d
 ```
