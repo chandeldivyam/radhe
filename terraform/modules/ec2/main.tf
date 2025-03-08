@@ -38,7 +38,7 @@ resource "aws_instance" "app" {
   key_name                   = aws_key_pair.deployer.key_name
 
   root_block_device {
-    volume_size = 30
+    volume_size = 50
     volume_type = "gp3"
     encrypted   = true
   }
@@ -84,34 +84,10 @@ resource "aws_instance" "app" {
               chmod +x /usr/local/bin/docker-compose
               usermod -aG docker ubuntu
 
-              # Create mount points
+              # Create directories for data storage on root volume
               mkdir -p /mnt/traefik
               mkdir -p /mnt/postgres
               mkdir -p /mnt/minio
-
-              # Wait for EBS volumes to be available
-              sleep 10
-
-              # Format EBS volumes if needed (we need to wait for attachments)
-              if [ -e ${var.cert_device_name} ] && [ "$(blkid ${var.cert_device_name} | wc -l)" -eq 0 ]; then
-                mkfs -t ext4 ${var.cert_device_name}
-              fi
-
-              if [ -e ${var.postgres_device_name} ] && [ "$(blkid ${var.postgres_device_name} | wc -l)" -eq 0 ]; then
-                mkfs -t ext4 ${var.postgres_device_name}
-              fi
-
-              if [ -e ${var.minio_device_name} ] && [ "$(blkid ${var.minio_device_name} | wc -l)" -eq 0 ]; then
-                mkfs -t ext4 ${var.minio_device_name}
-              fi
-
-              # Setup mount points in fstab
-              echo "${var.cert_device_name} /mnt/traefik ext4 defaults,nofail 0 2" >> /etc/fstab
-              echo "${var.postgres_device_name} /mnt/postgres ext4 defaults,nofail 0 2" >> /etc/fstab
-              echo "${var.minio_device_name} /mnt/minio ext4 defaults,nofail 0 2" >> /etc/fstab
-
-              # Mount all filesystems
-              mount -a || true
 
               # Set proper permissions
               chown -R 1000:1000 /mnt/traefik
