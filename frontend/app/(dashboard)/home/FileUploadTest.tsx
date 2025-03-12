@@ -54,13 +54,19 @@ export default function FileUploadTest() {
       };
       
       // Use a Promise to handle the XHR request
-      const uploadPromise = new Promise<any>((resolve, reject) => {
+      interface UploadResponse {
+        public_url: string;
+        [key: string]: unknown;
+      }
+      
+      const uploadPromise = new Promise<UploadResponse>((resolve, reject) => {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
-              const response = JSON.parse(xhr.responseText);
+              const response = JSON.parse(xhr.responseText) as UploadResponse;
               resolve(response);
             } catch (e) {
+              console.log('Error parsing JSON response:', e);
               reject(new Error('Invalid JSON response'));
             }
           } else {
