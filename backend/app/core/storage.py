@@ -68,7 +68,7 @@ class StorageService:
             raise ValueError("Bucket name is required")
         self.bucket_name = bucket_name
         self.region_name = "us-east-1"
-        self.endpoint_url = f"http://{settings.MINIO_HOST}:{settings.MINIO_PORT}"
+        self.endpoint_url = f"http://{settings.MINIO_HOST}:{settings.MINIO_PORT}" if settings.ENVIRONMENT == "development" else f"https://{settings.MINIO_URL}"
         
         # Configure the client using settings
         self.s3_client = boto3.client(
@@ -188,6 +188,7 @@ class StorageService:
             
             # Also generate a public URL for later retrieval
             public_url = self.get_public_url(file_key)
+            logger.info(f"Response: {presigned_url} {public_url} {file_key}")
             
             return {
                 "presigned_url": presigned_url,

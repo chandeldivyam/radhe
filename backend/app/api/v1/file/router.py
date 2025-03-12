@@ -7,7 +7,7 @@ import logging
 router = APIRouter(prefix="/files")
 logger = logging.getLogger(__name__)
 
-@router.post("/presigned-url", response_model=PresignedURLResponse)
+@router.get("/presigned-url", response_model=PresignedURLResponse)
 async def get_presigned_upload_url(
     file_key: str,
     content_type: str,
