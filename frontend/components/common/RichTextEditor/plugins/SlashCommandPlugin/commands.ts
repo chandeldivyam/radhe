@@ -14,12 +14,14 @@ import {
 	List,
 	ListOrdered,
 	Minus,
+	Image,
 } from 'lucide-react';
 import {
 	INSERT_ORDERED_LIST_COMMAND,
 	INSERT_UNORDERED_LIST_COMMAND,
 } from '@lexical/list';
 import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
+import { INSERT_IMAGE_COMMAND } from '../ImagePlugin';
 
 export class SlashCommandOption extends MenuOption {
 	title: string;
@@ -135,6 +137,17 @@ export const defaultCommands = [
 		category: 'Basic',
 		execute: (editor: LexicalEditor) => {
 			editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+		},
+	}),
+	new SlashCommandOption('Image', {
+		keywords: ['img', 'image', 'photo', 'picture', 'upload'],
+		icon: Image,
+		description: 'Upload an image',
+		category: 'Media',
+		execute: (editor: LexicalEditor) => {
+			// Instead of creating a file input directly, dispatch the command without a file
+			// This will trigger the placeholder UI to be shown
+			editor.dispatchCommand(INSERT_IMAGE_COMMAND, {});
 		},
 	}),
 ];
