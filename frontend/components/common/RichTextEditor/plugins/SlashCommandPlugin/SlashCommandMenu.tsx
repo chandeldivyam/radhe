@@ -49,7 +49,9 @@ export function SlashCommandMenuItem({
 			)}
 			<div className="command-details">
 				<span className="command-title">{option.title}</span>
-				<span className="command-description">{option.description}</span>
+				<span className="command-description">
+					{option.description}
+				</span>
 			</div>
 		</li>
 	);
@@ -69,7 +71,7 @@ export function SlashCommandMenu({
 			const menuElement = menuRef.current;
 			const viewportHeight = window.innerHeight;
 			const menuRect = menuElement.getBoundingClientRect();
-			
+
 			if (menuRect.bottom > viewportHeight) {
 				const maxHeight = viewportHeight - menuRect.top - 20; // 20px padding from bottom
 				menuElement.style.maxHeight = `${maxHeight}px`;

@@ -10,11 +10,7 @@ import {
 	$getNodeByKey,
 } from 'lexical';
 import { useCallback, useEffect } from 'react';
-import {
-	$createImageNode,
-	ImagePayload,
-	$isImageNode,
-} from '../../nodes/ImageNode';
+import { $createImageNode, $isImageNode } from '../../nodes/ImageNode';
 import { useAuth } from '@/lib/auth/authContext';
 import type { JSX } from 'react';
 
@@ -65,78 +61,80 @@ export function ImagePlugin(): JSX.Element {
 	}, [editor]);
 
 	const uploadFile = useCallback(
-        (file: File, nodeKey: string) => {
-            if (!user?.id || !user?.organization_id) {
-                console.error('User not authenticated');
-                return;
-            }
+		(file: File, nodeKey: string) => {
+			if (!user?.id || !user?.organization_id) {
+				console.error('User not authenticated');
+				return;
+			}
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('userId', user.id);
-            formData.append('organizationId', user.organization_id);
+			const formData = new FormData();
+			formData.append('file', file);
+			formData.append('userId', user.id);
+			formData.append('organizationId', user.organization_id);
 
-            const xhr = new XMLHttpRequest();
+			const xhr = new XMLHttpRequest();
 
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    editor.update(() => {
-                        const node = $getNodeByKey(nodeKey);
-                        if ($isImageNode(node)) {
-                            node.setUploadProgress(percentComplete);
-                        }
-                    });
-                }
-            };
+			xhr.upload.onprogress = (event) => {
+				if (event.lengthComputable) {
+					const percentComplete = Math.round(
+						(event.loaded / event.total) * 100
+					);
+					editor.update(() => {
+						const node = $getNodeByKey(nodeKey);
+						if ($isImageNode(node)) {
+							node.setUploadProgress(percentComplete);
+						}
+					});
+				}
+			};
 
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        const imageUrl = response.public_url;
-                        editor.update(() => {
-                            const node = $getNodeByKey(nodeKey);
-                            if ($isImageNode(node)) {
-                                node.setLoading(false);
-                                node.setSrc(imageUrl);
-                            }
-                        });
-                    } catch (e) {
-                        console.error('Error parsing JSON response:', e);
-                        editor.update(() => {
-                            const node = $getNodeByKey(nodeKey);
-                            if ($isImageNode(node)) {
-                                node.setLoading(false);
-                            }
-                        });
-                    }
-                } else {
-                    console.error('Upload failed with status', xhr.status);
-                    editor.update(() => {
-                        const node = $getNodeByKey(nodeKey);
-                        if ($isImageNode(node)) {
-                            node.setLoading(false);
-                        }
-                    });
-                }
-            };
+			xhr.onload = () => {
+				if (xhr.status >= 200 && xhr.status < 300) {
+					try {
+						const response = JSON.parse(xhr.responseText);
+						const imageUrl = response.public_url;
+						editor.update(() => {
+							const node = $getNodeByKey(nodeKey);
+							if ($isImageNode(node)) {
+								node.setLoading(false);
+								node.setSrc(imageUrl);
+							}
+						});
+					} catch (e) {
+						console.error('Error parsing JSON response:', e);
+						editor.update(() => {
+							const node = $getNodeByKey(nodeKey);
+							if ($isImageNode(node)) {
+								node.setLoading(false);
+							}
+						});
+					}
+				} else {
+					console.error('Upload failed with status', xhr.status);
+					editor.update(() => {
+						const node = $getNodeByKey(nodeKey);
+						if ($isImageNode(node)) {
+							node.setLoading(false);
+						}
+					});
+				}
+			};
 
-            xhr.onerror = () => {
-                console.error('Network error');
-                editor.update(() => {
-                    const node = $getNodeByKey(nodeKey);
-                    if ($isImageNode(node)) {
-                        node.setLoading(false);
-                    }
-                });
-            };
+			xhr.onerror = () => {
+				console.error('Network error');
+				editor.update(() => {
+					const node = $getNodeByKey(nodeKey);
+					if ($isImageNode(node)) {
+						node.setLoading(false);
+					}
+				});
+			};
 
-            xhr.open('POST', '/api/file/upload');
-            xhr.send(formData);
-        },
-        [editor, user]
-    );
+			xhr.open('POST', '/api/file/upload');
+			xhr.send(formData);
+		},
+		[editor, user]
+	);
 
 	// Register the command
 	useEffect(() => {
@@ -178,31 +176,34 @@ export function ImagePlugin(): JSX.Element {
 				if (payload.file) {
 					console.log('payload.file', payload.file);
 					const imageNode = $createImageNode({
-                        src: '',
-                        altText: payload.altText || payload.file.name,
-                        isLoading: true,
+						src: '',
+						altText: payload.altText || payload.file.name,
+						isLoading: true,
 						uploadProgress: 0,
 					});
 					let nodeKey: string | undefined;
 					editor.update(() => {
-                        const selection = $getSelection();
-                        if ($isRangeSelection(selection)) {
-                            const anchorNode = selection.anchor.getNode();
-                            const blockNode = anchorNode.getTopLevelElementOrThrow();
-                            blockNode.insertAfter(imageNode);
-                            const newParagraph = $createParagraphNode();
-                            imageNode.insertAfter(newParagraph);
-                            newParagraph.select();
-                        } else {
-                            $insertNodes([imageNode]);
-                        }
-                        nodeKey = imageNode.getKey();
+						const selection = $getSelection();
+						if ($isRangeSelection(selection)) {
+							const anchorNode = selection.anchor.getNode();
+							const blockNode =
+								anchorNode.getTopLevelElementOrThrow();
+							blockNode.insertAfter(imageNode);
+							const newParagraph = $createParagraphNode();
+							imageNode.insertAfter(newParagraph);
+							newParagraph.select();
+						} else {
+							$insertNodes([imageNode]);
+						}
+						nodeKey = imageNode.getKey();
 						console.log('nodeKey after insert', nodeKey);
 						if (nodeKey && payload.file) {
 							// Schedule the upload to happen after the update is committed
-							queueMicrotask(() => uploadFile(payload.file!, nodeKey!));
+							queueMicrotask(() =>
+								uploadFile(payload.file!, nodeKey!)
+							);
 						}
-                    });
+					});
 					return true;
 				}
 

@@ -24,7 +24,9 @@ export function SlashCommandPlugin() {
 			const search = queryString.toLowerCase();
 			return (
 				option.title.toLowerCase().includes(search) ||
-				option.keywords.some((keyword) => keyword.toLowerCase().includes(search)) ||
+				option.keywords.some((keyword) =>
+					keyword.toLowerCase().includes(search)
+				) ||
 				option.description.toLowerCase().includes(search)
 			);
 		});
@@ -62,7 +64,9 @@ export function SlashCommandPlugin() {
 							<SlashCommandMenu
 								options={options}
 								selectedIndex={selectedIndex ?? 0}
-								onSelect={(option) => selectOptionAndCleanUp(option)}
+								onSelect={(option) =>
+									selectOptionAndCleanUp(option)
+								}
 								onMouseEnter={setHighlightedIndex}
 							/>,
 							anchorElementRef.current
