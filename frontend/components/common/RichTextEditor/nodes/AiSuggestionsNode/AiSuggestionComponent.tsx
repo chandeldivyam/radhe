@@ -1,5 +1,5 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
-import { $getNodeByKey, $getRoot, $createParagraphNode } from 'lexical';
+import { $createParagraphNode, $getNodeByKey, $getRoot } from 'lexical';
 import { useState } from 'react';
 import { $convertFromMarkdownString } from '@lexical/markdown';
 import { TRANSFORMERS } from '../../plugins/MarkdownTransformers';
@@ -23,31 +23,23 @@ export function AiSuggestionComponent({
       const suggestionNode = $getNodeByKey(nodeKey);
       if (suggestionNode && suggestionNode instanceof AiSuggestionsNode) {
         const parent = suggestionNode.getParent();
-        // We are chosing to utilize grandparent node because the suggestion node is a child of a paragraph node. We dont want the new nodes to be children of the paragraph node.
         const grandParent = parent?.getParent();
-        let index = suggestionNode.getIndexWithinParent();
-        if (parent) {
-          index = parent.getIndexWithinParent();
-        }
-        if (parent) {
-          const root = $getRoot();
-          suggestionNode.remove();
-          const originalNodes = root.getChildren();
+        
+        if (parent && grandParent) {
+          // Convert markdown to nodes under a temporary parent
+          const tempParagraph = $createParagraphNode();
+          $convertFromMarkdownString(markdown, TRANSFORMERS, tempParagraph);
           
-          root.clear();
-
-          $convertFromMarkdownString(markdown, TRANSFORMERS);
-          console.log('Root:', root.getChildren());
-          const convertedNodes = root.getChildren()
-          root.clear();
-          originalNodes.forEach((node) => root.append(node));
-          // convertedNodes.forEach((node) => root.append(node));
+          // Get all converted children
+          const newNodes = tempParagraph.getChildren();
           
-          if (convertedNodes.length > 0) {
-            grandParent ? grandParent.splice(index, 0, convertedNodes) : parent.splice(index, 0, convertedNodes);
-          } else {
-            grandParent ? grandParent.splice(index, 0, [$createParagraphNode()]) : parent.splice(index, 0, [$createParagraphNode()]);
-          }
+          // Insert all new nodes after the parent
+          newNodes.reverse().forEach((node) => {
+            parent.insertAfter(node);  // Changed to insert after the parent directly
+          });
+          
+          // Remove the original suggestion node and its parent paragraph
+          parent.remove();
         }
       }
     });
