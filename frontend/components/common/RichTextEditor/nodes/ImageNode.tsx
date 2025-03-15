@@ -73,9 +73,9 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
 	// DOM creation and update methods
 	createDOM(): HTMLElement {
-		const div = document.createElement('div');
-		div.className = 'image-node-container';
-		return div;
+		const span = document.createElement('span');
+		span.className = 'image-node-container';
+		return span;
 	}
 
 	updateDOM(): boolean {
@@ -106,6 +106,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 	// Export methods for serialization
 	exportJSON(): SerializedImageNode {
 		return {
+			...super.exportJSON(),
 			type: 'image',
 			src: this.__src,
 			altText: this.__altText,
@@ -151,7 +152,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 				altText={this.__altText}
 				isLoading={this.__isLoading}
 				uploadProgress={this.__uploadProgress}
-				nodeKey={this.__key}
+				nodeKey={this.getKey()}
 			/>
 		);
 	}
