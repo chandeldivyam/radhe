@@ -29,6 +29,8 @@ import {
 } from '@hocuspocus/provider';
 import { useEffect, useRef, useState } from 'react';
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
+import { ImagePlugin } from './plugins/ImagePlugin';
+import DragDropPastePlugin from './plugins/DragDropPastePlugin';
 
 interface RichTextEditorProps {
 	noteId: string;
@@ -212,6 +214,8 @@ export function RichTextEditor({
 					<CodeHighlightPlugin />
 					<SlashCommandPlugin />
 					<HorizontalRulePlugin />
+					<ImagePlugin />
+					<DragDropPastePlugin />
 					<CollaborationPlugin
 						key={noteId}
 						id={noteId}

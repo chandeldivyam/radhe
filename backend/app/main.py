@@ -2,13 +2,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.logging import setup_logging
-import logging
 import time
 import uuid
 from app.api.v1.organization import router as organization_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.user import router as user_router
 from app.api.v1.note import router as note_router
+from app.api.v1.file import router as file_router
 
 # Setup logging
 logger, _ = setup_logging()  # Changed to use _ since we don't need opensearch_handler
@@ -90,4 +90,10 @@ app.include_router(
     note_router,
     prefix="/api/v1",
     tags=["notes"]
+)
+
+app.include_router(
+    file_router,
+    prefix="/api/v1",
+    tags=["files"]
 )
