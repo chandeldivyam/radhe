@@ -73,7 +73,7 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
 
 	// DOM creation and update methods
 	createDOM(): HTMLElement {
-		const span = document.createElement('span');
+		const span = document.createElement('div');
 		span.className = 'image-node-container';
 		return span;
 	}

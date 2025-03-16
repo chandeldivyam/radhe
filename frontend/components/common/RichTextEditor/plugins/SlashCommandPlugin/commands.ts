@@ -24,7 +24,6 @@ import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontal
 import { INSERT_IMAGE_COMMAND } from '../ImagePlugin';
 import { INSERT_AI_SUGGESTION_COMMAND } from '../AiSuggestionPlugin';
 
-
 export class SlashCommandOption extends MenuOption {
 	title: string;
 	keywords: string[];
@@ -152,19 +151,17 @@ export const defaultCommands = [
 			editor.dispatchCommand(INSERT_IMAGE_COMMAND, {});
 		},
 	}),
-	  new SlashCommandOption('Suggest Markdown', {
+	new SlashCommandOption('Suggest Markdown', {
 		keywords: ['suggest', 'ai', 'markdown'],
 		icon: Type,
 		description: 'Insert an AI-suggested markdown',
 		category: 'AI',
 		execute: (editor: LexicalEditor) => {
-			// editor.dispatchCommand(
-			// 	INSERT_AI_SUGGESTION_COMMAND,
-			// 	{
-			// 		suggestionType: 'add',
-			// 		markdown: '# Suggested Heading\n\nSome text here\n\n![Image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)'
-			// 	}
-			// );
+			editor.dispatchCommand(INSERT_AI_SUGGESTION_COMMAND, {
+				suggestionType: 'add',
+				markdown:
+					'# Suggested Heading\n\nSome text here\n\n![Image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)',
+			});
 
 			// editor.dispatchCommand(
 			// 	INSERT_AI_SUGGESTION_COMMAND,
@@ -174,14 +171,14 @@ export const defaultCommands = [
 			// 	}
 			// );
 
-			editor.dispatchCommand(
-				INSERT_AI_SUGGESTION_COMMAND,
-				{
-					suggestionType: 'modify',
-					targetNodeKey: '1',
-					modifiedMarkdown: '# Modified Heading\n\nUpdated text'
-				}
-			)
+			// editor.dispatchCommand(
+			// 	INSERT_AI_SUGGESTION_COMMAND,
+			// 	{
+			// 		suggestionType: 'modify',
+			// 		targetNodeKey: '1',
+			// 		modifiedMarkdown: '# Heading\n\nUpdated text'
+			// 	}
+			// )
 		},
 	}),
 ];

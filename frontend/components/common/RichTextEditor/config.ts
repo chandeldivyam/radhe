@@ -32,4 +32,3 @@ export const editorConfig: InitialConfigType = {
 		console.error(error);
 	},
 };
-
