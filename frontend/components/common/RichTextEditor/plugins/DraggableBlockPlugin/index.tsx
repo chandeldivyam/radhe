@@ -456,6 +456,7 @@ function useDraggableBlockMenu(
 						const node = $getNearestNodeFromDOMNode(blockElem);
 						if (node) {
 							onBlockSelection(event, node.getKey());
+							console.log('Block selected:', node.getKey());
 						}
 					});
 				}

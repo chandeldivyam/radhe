@@ -6,10 +6,15 @@ import {
   COMMAND_PRIORITY_EDITOR,
   createCommand,
 } from 'lexical';
-import { $createAiSuggestionsNode } from '../../nodes/AiSuggestionsNode';
+import { $createAiSuggestionsNode, SuggestionType } from '../../nodes/AiSuggestionsNode';
 import type { JSX } from 'react';
 
-export const INSERT_AI_SUGGESTION_COMMAND = createCommand<string>('INSERT_AI_SUGGESTION');
+export const INSERT_AI_SUGGESTION_COMMAND = createCommand<{
+  suggestionType: SuggestionType;
+  markdown?: string;
+  targetNodeKey?: string;
+  modifiedMarkdown?: string;
+}>('INSERT_AI_SUGGESTION');
 
 export function AiSuggestionPlugin(): JSX.Element | null {
   const [editor] = useLexicalComposerContext();
@@ -17,11 +22,16 @@ export function AiSuggestionPlugin(): JSX.Element | null {
   useEffect(() => {
     const unregisterCommand = editor.registerCommand(
       INSERT_AI_SUGGESTION_COMMAND,
-      (markdown: string) => {
+      ({ suggestionType, markdown, targetNodeKey, modifiedMarkdown }) => {
         editor.update(() => {
           const selection = $getSelection();
           if ($isRangeSelection(selection)) {
-            const suggestionNode = $createAiSuggestionsNode(markdown);
+            const suggestionNode = $createAiSuggestionsNode(
+              suggestionType,
+              markdown,
+              targetNodeKey,
+              modifiedMarkdown
+            );
             selection.insertNodes([suggestionNode]);
           }
         });
