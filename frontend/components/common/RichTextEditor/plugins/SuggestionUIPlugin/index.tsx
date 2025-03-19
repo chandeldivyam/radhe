@@ -42,10 +42,10 @@ export function SuggestionUIPlugin() {
   }, [editor]);
 
   return (
-    <div style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}>
+    <>
       {suggestionNodeKeys.map((key) => (
         <SuggestionButtons key={key} nodeKey={key} />
       ))}
-    </div>
+    </>
   );
 }

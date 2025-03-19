@@ -35,6 +35,7 @@ import { MarkdownCopyPlugin } from './plugins/MarkdownCopyPlugin';
 import { AiSuggestionPlugin } from './plugins/AiSuggestionPlugin';
 import { SuggestionPlugin } from './plugins/SuggestionPlugin';
 import { SuggestionUIPlugin } from './plugins/SuggestionUIPlugin';
+import { MarkdownToNotePlugin } from './plugins/MarkdownToNote';
 
 interface RichTextEditorProps {
 	noteId: string;
@@ -224,6 +225,7 @@ export function RichTextEditor({
 					<AiSuggestionPlugin />
 					<SuggestionPlugin />
 					<SuggestionUIPlugin />
+					<MarkdownToNotePlugin />
 					<CollaborationPlugin
 						key={noteId}
 						id={noteId}

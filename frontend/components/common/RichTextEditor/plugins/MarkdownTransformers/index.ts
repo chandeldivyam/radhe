@@ -1,4 +1,4 @@
-import { ElementTransformer } from '@lexical/markdown';
+import { ElementTransformer, TextMatchTransformer } from '@lexical/markdown';
 import { LexicalNode, ElementNode, TextNode } from 'lexical';
 import {
   $isImageNode,
@@ -40,29 +40,36 @@ export const IMAGE: ElementTransformer = {
 };
 
 export const SUGGESTION: ElementTransformer = {
-  dependencies: [SuggestionNode],
-  export: (node: LexicalNode, exportChildren: (node: ElementNode) => string) => {
-    if (!$isSuggestionNode(node)) {
-      return null;
-    }
-    const suggestionType = node.__suggestionType;
-    const childrenMarkdown = $convertToMarkdownString(TRANSFORMERS, node); // Use the provided function to export children
-	console.log('childrenMarkdown', childrenMarkdown);
-    return `[[suggestion:${suggestionType}|${childrenMarkdown}]]`;
-  },
-  regExp: /\[\[suggestion:(add|delete)\|([\s\S]*?)\]\]/,
-  replace: (parentNode, children, match) => {
-    const [, suggestionType, content] = match;
-    const suggestionNode = $createSuggestionNode(suggestionType as SuggestionType);
-    $convertFromMarkdownString(content, TRANSFORMERS, suggestionNode);
-    parentNode.append(suggestionNode);
-  },
-  type: 'element',
+	dependencies: [SuggestionNode],
+	export: (node: LexicalNode, exportChildren: (node: ElementNode) => string) => {
+	  if (!$isSuggestionNode(node)) {
+		return null;
+	  }
+	  const suggestionType = node.__suggestionType;
+	  const childrenMarkdown = $convertToMarkdownString(TRANSFORMERS, node);
+	  // Replace newlines with a placeholder during export
+	  const singleLineContent = childrenMarkdown.replace(/\n/g, '__NEWLINE__');
+	  return `[[suggestion:${suggestionType}|${singleLineContent}]]`;
+	},
+	regExp: /\[\[suggestion:(add|delete)\|([^|]*?)\]\]/, // Simplified: no newlines expected
+	replace: (parentNode, children, match) => {
+	  console.log('Suggestion transformer matched:', match);
+	  const suggestionType = match[1];
+	  let content = match[2];
+	  // Replace the placeholder back with newlines before parsing
+	  content = content.replace(/__NEWLINE__/g, '\n');
+	  console.log('suggestionType', suggestionType);
+	  console.log('content', content);
+	  const suggestionNode = $createSuggestionNode(suggestionType as SuggestionType);
+	  $convertFromMarkdownString(content, TRANSFORMERS, suggestionNode);
+	  parentNode.replace(suggestionNode);
+	},
+	type: 'element',
 };
 
 export const TRANSFORMERS = [
-  IMAGE,
   SUGGESTION,
+  IMAGE,
   ...ELEMENT_TRANSFORMERS,
   ...TEXT_FORMAT_TRANSFORMERS,
   ...TEXT_MATCH_TRANSFORMERS,
