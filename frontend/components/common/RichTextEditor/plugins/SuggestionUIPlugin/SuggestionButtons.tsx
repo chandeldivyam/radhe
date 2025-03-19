@@ -34,17 +34,22 @@ export function SuggestionButtons({ nodeKey }: SuggestionButtonsProps) {
       const suggestionNode = $getNodeByKey(nodeKey);
       if (!suggestionNode || !(suggestionNode instanceof SuggestionNode)) return;
 
-      // Get the root node
-      const root = $getRoot();
-      // Get the children of the suggestion node (the suggested content)
-      const children = suggestionNode.getChildren();
-      
-      // Add the children after the suggestion node
-      children.reverse().forEach((node) => {
-        suggestionNode.insertAfter(node);
-      })
+      switch (suggestionNode.__suggestionType) {
+        case 'add':
+          // Get the children of the suggestion node (the suggested content)
+            const children = suggestionNode.getChildren();
+          
+            // Add the children after the suggestion node
+            children.reverse().forEach((node) => {
+                suggestionNode.insertAfter(node);
+            })
 
-      suggestionNode.remove();
+            suggestionNode.remove();
+            break;
+        case 'delete':
+            suggestionNode.remove();
+            break;
+      }
     });
   };
 
@@ -52,7 +57,18 @@ export function SuggestionButtons({ nodeKey }: SuggestionButtonsProps) {
     editor.update(() => {
       const suggestionNode = $getNodeByKey(nodeKey);
       if (!suggestionNode || !(suggestionNode instanceof SuggestionNode)) return;
-      suggestionNode.remove();
+      switch (suggestionNode.__suggestionType) {
+        case 'add':
+          suggestionNode.remove();
+          break;
+        case 'delete':
+          const children = suggestionNode.getChildren();
+          children.reverse().forEach((node) => {
+            suggestionNode.insertAfter(node);
+          })
+          suggestionNode.remove();
+          break;
+      }
     });
   };
 

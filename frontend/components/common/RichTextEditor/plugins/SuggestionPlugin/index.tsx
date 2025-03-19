@@ -14,7 +14,7 @@ import type { JSX } from 'react';
 
 export const INSERT_SUGGESTION_COMMAND = createCommand<{
   suggestionType: SuggestionType;
-  markdown: string;
+  markdown?: string;
   targetNodeKey?: string;
 }>('INSERT_SUGGESTION');
 
@@ -27,24 +27,45 @@ export function SuggestionPlugin(): JSX.Element | null {
       ({ suggestionType, markdown, targetNodeKey }) => {
         editor.update(() => {
           const suggestionNode = $createSuggestionNode(suggestionType);
-
-          // Convert markdown to nodes and append as children
-          $convertFromMarkdownString(markdown, TRANSFORMERS, suggestionNode);
-
-          if (targetNodeKey) {
-            const targetNode = $getNodeByKey(targetNodeKey);
-            if (targetNode) {
-              targetNode.insertAfter(suggestionNode);
-            }
-          } else {
-            const root = $getRoot();
-            const firstChild = root.getFirstChild();
-            if (firstChild) {
-              firstChild.insertBefore(suggestionNode);
-            } else {
-              root.append(suggestionNode);
-            }
+          switch (suggestionType) {
+            case 'add':
+              // Convert markdown to nodes and append as children
+              if (!markdown) {
+                console.error('No markdown provided for add suggestion');
+                return null;
+              }
+              $convertFromMarkdownString(markdown, TRANSFORMERS, suggestionNode);
+    
+              if (targetNodeKey) {
+                const targetNode = $getNodeByKey(targetNodeKey);
+                if (targetNode) {
+                  targetNode.insertAfter(suggestionNode);
+                }
+              } else {
+                const root = $getRoot();
+                const firstChild = root.getFirstChild();
+                if (firstChild) {
+                  firstChild.insertBefore(suggestionNode);
+                } else {
+                  root.append(suggestionNode);
+                }
+              }
+              break;
+            case 'delete':
+              if (!targetNodeKey) {
+                console.error('No target node key provided for delete suggestion');
+                return;
+              }
+              const targetNode = $getNodeByKey(targetNodeKey);
+              if (targetNode) {
+                // We need to put the target node inside the suggestion node
+                targetNode.insertAfter(suggestionNode);
+                suggestionNode.append(targetNode);
+                // Put the suggestion node after the target node
+              }
+              break;
           }
+          // Convert markdown to nodes and append as children
         });
         return true;
       },

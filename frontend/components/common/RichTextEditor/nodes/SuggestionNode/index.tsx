@@ -6,11 +6,11 @@ import {
     Spread,
     $applyNodeReplacement,
   } from 'lexical';
-  import { $convertFromMarkdownString } from '@lexical/markdown';
+  import { $convertFromMarkdownString, $convertToMarkdownString } from '@lexical/markdown';
   import { TRANSFORMERS } from '../../plugins/MarkdownTransformers';
   
   // Define the suggestion type (for now, only "add")
-  export type SuggestionType = 'add'; // We’ll expand this later for "delete" and "modify"
+  export type SuggestionType = 'add' | 'delete'; // We’ll expand this later for "delete" and "modify"
   
   // Define the serialized format for persistence
   export type SerializedSuggestionNode = Spread<
@@ -68,6 +68,7 @@ import {
     isInline(): boolean {
       return false; // Suggestions are block-level for simplicity
     }
+
   }
   
   export function $createSuggestionNode(suggestionType: SuggestionType): SuggestionNode {

@@ -192,6 +192,10 @@ export const defaultCommands = [
 				suggestionType: 'add',
 				markdown: '# Suggested Heading\n\nSome text here\n\n![Image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)',
 			});
+			// editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
+			// 	suggestionType: 'delete',
+			// 	targetNodeKey: '1',
+			// });
 		},
 	}),
 ];
