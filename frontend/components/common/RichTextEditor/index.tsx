@@ -33,6 +33,8 @@ import { ImagePlugin } from './plugins/ImagePlugin';
 import DragDropPastePlugin from './plugins/DragDropPastePlugin';
 import { MarkdownCopyPlugin } from './plugins/MarkdownCopyPlugin';
 import { AiSuggestionPlugin } from './plugins/AiSuggestionPlugin';
+import { SuggestionPlugin } from './plugins/SuggestionPlugin';
+import { SuggestionUIPlugin } from './plugins/SuggestionUIPlugin';
 
 interface RichTextEditorProps {
 	noteId: string;
@@ -220,6 +222,8 @@ export function RichTextEditor({
 					<DragDropPastePlugin />
 					<MarkdownCopyPlugin />
 					<AiSuggestionPlugin />
+					<SuggestionPlugin />
+					<SuggestionUIPlugin />
 					<CollaborationPlugin
 						key={noteId}
 						id={noteId}
