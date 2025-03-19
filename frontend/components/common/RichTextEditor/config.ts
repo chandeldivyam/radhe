@@ -7,7 +7,6 @@ import { HorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode';
 import { CodeNode, CodeHighlightNode } from '@lexical/code';
 import { theme } from './theme';
 import { ImageNode } from './nodes/ImageNode';
-import { AiSuggestionsNode } from './nodes/AiSuggestionsNode';
 import { SuggestionNode } from './nodes/SuggestionNode';
 export const editorConfig: InitialConfigType = {
 	namespace: 'notes',
@@ -26,7 +25,6 @@ export const editorConfig: InitialConfigType = {
 		CodeNode,
 		CodeHighlightNode,
 		ImageNode,
-		AiSuggestionsNode,
 		SuggestionNode,
 	],
 	onError: (error: Error) => {

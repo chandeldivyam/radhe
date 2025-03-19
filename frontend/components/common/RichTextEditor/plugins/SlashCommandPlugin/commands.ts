@@ -22,7 +22,6 @@ import {
 } from '@lexical/list';
 import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
 import { INSERT_IMAGE_COMMAND } from '../ImagePlugin';
-import { INSERT_AI_SUGGESTION_COMMAND } from '../AiSuggestionPlugin';
 import { INSERT_SUGGESTION_COMMAND } from '../SuggestionPlugin';
 import { IMPORT_MARKDOWN_COMMAND } from '../MarkdownToNote';
 
@@ -168,36 +167,6 @@ export const defaultCommands = [
 			// Instead of creating a file input directly, dispatch the command without a file
 			// This will trigger the placeholder UI to be shown
 			editor.dispatchCommand(INSERT_IMAGE_COMMAND, {});
-		},
-	}),
-	new SlashCommandOption('Suggest Markdown', {
-		keywords: ['suggest', 'ai', 'markdown'],
-		icon: Type,
-		description: 'Insert an AI-suggested markdown',
-		category: 'AI',
-		execute: (editor: LexicalEditor) => {
-			editor.dispatchCommand(INSERT_AI_SUGGESTION_COMMAND, {
-				suggestionType: 'add',
-				markdown:
-					MARKDOWN_TEMP_STRING,
-			});
-
-			// editor.dispatchCommand(
-			// 	INSERT_AI_SUGGESTION_COMMAND,
-			// 	{
-			// 		suggestionType: 'delete',
-			// 		targetNodeKey: '1'
-			// 	}
-			// );
-
-			// editor.dispatchCommand(
-			// 	INSERT_AI_SUGGESTION_COMMAND,
-			// 	{
-			// 		suggestionType: 'modify',
-			// 		targetNodeKey: '1',
-			// 		modifiedMarkdown: '# Heading\n\nUpdated text'
-			// 	}
-			// )
 		},
 	}),
 	new SlashCommandOption('Suggestion', {
