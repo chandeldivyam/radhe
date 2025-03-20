@@ -174,13 +174,13 @@ export function ImagePlugin(): JSX.Element {
 				// If we have a file, we'll let the ImageComponent handle it
 				// Just insert an empty node if this is called from elsewhere
 				if (payload.file) {
-					console.log('payload.file', payload.file);
 					const imageNode = $createImageNode({
 						src: '',
 						altText: payload.altText || payload.file.name,
 						isLoading: true,
 						uploadProgress: 0,
 					});
+
 					let nodeKey: string | undefined;
 					editor.update(() => {
 						const selection = $getSelection();

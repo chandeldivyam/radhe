@@ -24,6 +24,10 @@ body {
 		--accent-foreground: 240 5.9% 10%;
 		--destructive: 0 84.2% 60.2%;
 		--destructive-foreground: 0 0% 98%;
+		--destructive-light: 0 84.2% 60.2% / 0.1;
+		--success: 142 76% 36%;
+		--success-foreground: 0 0% 98%;
+		--success-light: 142 76% 36% / 0.1;
 		--border: 240 5.9% 90%;
 		--input: 240 5.9% 90%;
 		--ring: 240 10% 3.9%;
@@ -58,6 +62,10 @@ body {
 		--accent-foreground: 0 0% 98%;
 		--destructive: 0 62.8% 30.6%;
 		--destructive-foreground: 0 0% 98%;
+		--destructive-light: 0 62.8% 30.6% / 0.1;
+		--success: 142 69% 29%;
+		--success-foreground: 0 0% 98%;
+		--success-light: 142 69% 29% / 0.1;
 		--border: 240 3.7% 15.9%;
 		--input: 240 3.7% 15.9%;
 		--ring: 240 4.9% 83.9%;
@@ -95,5 +103,13 @@ body {
 		opacity: var(--gradient-opacity);
 		animation: pulse var(--gradient-animation-duration)
 			cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	.suggestion-accept-btn {
+		@apply bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))];
+	}
+
+	.suggestion-reject-btn {
+		@apply bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))];
 	}
 }

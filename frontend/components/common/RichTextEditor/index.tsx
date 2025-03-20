@@ -31,6 +31,10 @@ import { useEffect, useRef, useState } from 'react';
 import { HorizontalRulePlugin } from '@lexical/react/LexicalHorizontalRulePlugin';
 import { ImagePlugin } from './plugins/ImagePlugin';
 import DragDropPastePlugin from './plugins/DragDropPastePlugin';
+// import { MarkdownCopyPlugin } from './plugins/MarkdownCopyPlugin';
+import { SuggestionPlugin } from './plugins/SuggestionPlugin';
+import { SuggestionUIPlugin } from './plugins/SuggestionUIPlugin';
+import { MarkdownToNotePlugin } from './plugins/MarkdownToNote';
 
 interface RichTextEditorProps {
 	noteId: string;
@@ -216,6 +220,9 @@ export function RichTextEditor({
 					<HorizontalRulePlugin />
 					<ImagePlugin />
 					<DragDropPastePlugin />
+					<SuggestionPlugin />
+					<SuggestionUIPlugin />
+					<MarkdownToNotePlugin />
 					<CollaborationPlugin
 						key={noteId}
 						id={noteId}

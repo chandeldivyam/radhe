@@ -22,6 +22,20 @@ import {
 } from '@lexical/list';
 import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontalRuleNode';
 import { INSERT_IMAGE_COMMAND } from '../ImagePlugin';
+import { INSERT_SUGGESTION_COMMAND } from '../SuggestionPlugin';
+import { IMPORT_MARKDOWN_COMMAND } from '../MarkdownToNote';
+
+const MARKDOWN_TEMP_STRING = `[[suggestion:delete|This did break somehow]]
+
+![Linked image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)
+
+I am not sure what happened
+
+node1
+
+node2
+
+node3`;
 
 export class SlashCommandOption extends MenuOption {
 	title: string;
@@ -148,6 +162,34 @@ export const defaultCommands = [
 			// Instead of creating a file input directly, dispatch the command without a file
 			// This will trigger the placeholder UI to be shown
 			editor.dispatchCommand(INSERT_IMAGE_COMMAND, {});
+		},
+	}),
+	new SlashCommandOption('Suggestion', {
+		keywords: ['suggestion', 'ai', 'suggestion'],
+		icon: Type,
+		description: 'Insert an AI-suggested suggestion',
+		category: 'AI',
+		execute: (editor: LexicalEditor) => {
+			// editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
+			// 	suggestionType: 'add',
+			// 	markdown: MARKDOWN_TEMP_STRING_2,
+			// });
+			editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
+				suggestionType: 'delete',
+				targetNodeKey: '1',
+			});
+		},
+	}),
+	new SlashCommandOption('Import Markdown', {
+		keywords: ['md', 'markdown', 'import'],
+		icon: Type,
+		description: 'Import content from markdown',
+		category: 'Content',
+		execute: (editor: LexicalEditor) => {
+			editor.dispatchCommand(
+				IMPORT_MARKDOWN_COMMAND,
+				MARKDOWN_TEMP_STRING
+			);
 		},
 	}),
 ];
