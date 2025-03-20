@@ -104,11 +104,11 @@ body {
 		animation: pulse var(--gradient-animation-duration)
 			cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
-	
+
 	.suggestion-accept-btn {
 		@apply bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))];
 	}
-	
+
 	.suggestion-reject-btn {
 		@apply bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))];
 	}
