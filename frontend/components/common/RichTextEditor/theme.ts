@@ -41,4 +41,5 @@ export const theme: EditorThemeClasses = {
 	link: 'editor-link',
 	editorPlaceholder: 'editor-placeholder',
 	hr: 'editor-hr',
+	code: 'editor-code-block',
 };
