@@ -14,6 +14,7 @@ docker-compose -f docker-compose.dev.yml logs -f frontend backend
 ```
 7. To exec into database container `docker compose -f docker-compose.dev.yml exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}`
 8. To restart the frontend after installing dependencies `docker compose -f docker-compose.dev.yml up -d --build frontend`
+9. To generate and apply migrations `docker compose -f docker-compose.dev.yml exec backend alembic revision --autogenerate -m "auto migration" && docker compose -f docker-compose.dev.yml exec backend alembic upgrade head`
 
 # How to setup infrastructure
 
