@@ -15,6 +15,7 @@ import {
 	ListOrdered,
 	Minus,
 	Image,
+	Code,
 } from 'lucide-react';
 import {
 	INSERT_ORDERED_LIST_COMMAND,
@@ -24,10 +25,10 @@ import { INSERT_HORIZONTAL_RULE_COMMAND } from '@lexical/react/LexicalHorizontal
 import { INSERT_IMAGE_COMMAND } from '../ImagePlugin';
 import { INSERT_SUGGESTION_COMMAND } from '../SuggestionPlugin';
 import { IMPORT_MARKDOWN_COMMAND } from '../MarkdownToNote';
+import { $createCodeNode } from '@lexical/code';
 
-const MARKDOWN_TEMP_STRING = `[[suggestion:delete|This did break somehow]]
-
-![Linked image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)
+const MARKDOWN_TEMP_STRING =
+	`![Linked image](https://s3.radhe.space/radhe-bucket/00562982-274e-4b71-902d-084b30a36d91/b89dfe03-4a4a-460b-8d0e-b6b6787b0eab/70e15ab0-30d6-431b-a83a-7bcc6c3f8212)
 
 I am not sure what happened
 
@@ -35,7 +36,14 @@ node1
 
 node2
 
-node3`;
+node3
+` +
+	'```python\n' +
+	`a = {
+	"abc": "abc"
+}
+` +
+	'```';
 
 export class SlashCommandOption extends MenuOption {
 	title: string;
@@ -170,14 +178,14 @@ export const defaultCommands = [
 		description: 'Insert an AI-suggested suggestion',
 		category: 'AI',
 		execute: (editor: LexicalEditor) => {
-			// editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
-			// 	suggestionType: 'add',
-			// 	markdown: MARKDOWN_TEMP_STRING_2,
-			// });
 			editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
-				suggestionType: 'delete',
-				targetNodeKey: '1',
+				suggestionType: 'add',
+				markdown: MARKDOWN_TEMP_STRING,
 			});
+			// editor.dispatchCommand(INSERT_SUGGESTION_COMMAND, {
+			// 	suggestionType: 'delete',
+			// 	targetNodeKey: '1',
+			// });
 		},
 	}),
 	new SlashCommandOption('Import Markdown', {
@@ -190,6 +198,21 @@ export const defaultCommands = [
 				IMPORT_MARKDOWN_COMMAND,
 				MARKDOWN_TEMP_STRING
 			);
+		},
+	}),
+	new SlashCommandOption('Code Block', {
+		keywords: ['code', 'codeblock', 'snippet'],
+		icon: Code,
+		description: 'Insert a code block',
+		category: 'Basic',
+		execute: (editor: LexicalEditor) => {
+			editor.update(() => {
+				const selection = $getSelection();
+				if ($isRangeSelection(selection)) {
+					const codeNode = $createCodeNode('javascript');
+					selection.insertNodes([codeNode]);
+				}
+			});
 		},
 	}),
 ];

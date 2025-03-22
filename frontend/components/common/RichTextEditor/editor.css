@@ -137,3 +137,18 @@
 .editor-hr {
 	@apply p-[2px] border-t-2 border-border my-4 cursor-pointer focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors;
 }
+
+.editor-code-block {
+	@apply bg-muted p-1 rounded-md;
+	font-family: Menlo, Consolas, Monaco, monospace;
+	display: block;
+	padding: 0px;
+	margin: 0;
+	margin-top: 8px;
+	margin-bottom: 8px;
+	border-radius: 4px;
+	padding: 16px;
+	overflow-x: auto; /* Handle long lines */
+	position: relative;
+	tab-size: 2;
+}

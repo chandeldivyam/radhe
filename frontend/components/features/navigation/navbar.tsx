@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu } from 'lucide-react';
+import { Menu, PanelRight, PanelRightClose } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { UserNav } from './user-nav';
 import { ThemeToggle } from './theme-toggle';
@@ -11,11 +11,17 @@ import { navigationConfig } from './navigation';
 interface NavbarProps {
 	user: UserResponse | null;
 	onSidebarToggle: () => void;
+	onChatToggle: () => void;
+	chatOpen: boolean;
 }
 
-export function Navbar({ user, onSidebarToggle }: NavbarProps) {
+export function Navbar({
+	user,
+	onSidebarToggle,
+	onChatToggle,
+	chatOpen,
+}: NavbarProps) {
 	const pathname = usePathname();
-
 	// Find the current page title from navigation config
 	const currentPage = navigationConfig.find((item) => item.href === pathname);
 	const pageTitle = currentPage?.title || 'Dashboard';
@@ -39,6 +45,13 @@ export function Navbar({ user, onSidebarToggle }: NavbarProps) {
 					<div className="flex items-center space-x-2">
 						<ThemeToggle />
 						{user && <UserNav user={user} />}
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={onChatToggle}
+						>
+							{chatOpen ? <PanelRightClose /> : <PanelRight />}
+						</Button>
 					</div>
 				</div>
 			</div>
