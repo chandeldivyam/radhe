@@ -8,7 +8,7 @@ import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
 import { TRANSFORMERS } from '@lexical/markdown';
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
-import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import { CollaborationPlugin } from '@lexical/react/LexicalCollaborationPlugin';
 import { ListPlugin } from '@lexical/react/LexicalListPlugin';
