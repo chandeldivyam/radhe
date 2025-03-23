@@ -15,3 +15,13 @@ class FileMetadata(BaseModel):
     size: int
     last_modified: str
     public_url: str
+
+class DirectFileUploadRequest(BaseModel):
+    file: bytes
+    file_name: str
+    content_type: str
+
+class DirectUploadResponse(BaseModel):
+    public_url: str
+    file_key: str
+    size: int

@@ -256,3 +256,24 @@ class StorageService:
         except ClientError as e:
             logger.error(f"Error listing files with prefix {prefix}: {e}")
             raise
+            
+    def upload_file(self, file_key: str, file_data: bytes, content_type: str) -> bool:
+        """Upload a file directly to storage"""
+        try:
+            # Ensure the file_key doesn't start with a slash
+            if file_key.startswith("/"):
+                raise ValueError("File key cannot start with a slash")
+                
+            # Upload the file using put_object
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=file_key,
+                Body=file_data,
+                ContentType=content_type
+            )
+            
+            logger.info(f"Successfully uploaded file {file_key} to bucket {self.bucket_name}")
+            return True
+        except ClientError as e:
+            logger.error(f"Error uploading file {file_key}: {e}")
+            raise
