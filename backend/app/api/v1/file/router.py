@@ -37,8 +37,7 @@ async def upload_file(
         # Read file content
         file_content = await file.read()
         
-        # Generate a unique file key if not provided
-        # Using the original filename but with a UUID prefix to avoid collisions
+        # Generate a unique file key
         file_key = f"{uuid.uuid4()}"
         
         # Upload the file
