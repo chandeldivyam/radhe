@@ -9,6 +9,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.user import router as user_router
 from app.api.v1.note import router as note_router
 from app.api.v1.file import router as file_router
+from app.api.v1.agent_task import router as agent_task_router
 
 # Setup logging
 logger, _ = setup_logging()  # Changed to use _ since we don't need opensearch_handler
@@ -96,4 +97,10 @@ app.include_router(
     file_router,
     prefix="/api/v1",
     tags=["files"]
+)
+
+app.include_router(
+    agent_task_router,
+    prefix="/api/v1",
+    tags=["agent_tasks"]
 )

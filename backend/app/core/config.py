@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
 
+    # Celery
+    BACKEND_BASE_URL: Optional[str] = None
+    WORKER_API_KEY: Optional[str] = None
+    
     # Flower
     ENABLE_FLOWER: bool = False
     FLOWER_PORT: int = 5555

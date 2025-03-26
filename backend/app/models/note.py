@@ -34,6 +34,20 @@ class Note(Base):
         lazy='noload',  # Don't load by default
         cascade="all, delete-orphan"
     )
+
+    referenced_by_tasks = relationship(
+        "AgentTask",
+        secondary="agent_task_reference_notes",
+        back_populates="reference_notes",
+        lazy="noload"  # Use dynamic loading if you don't always need tasks when loading a note
+    )
+
+    modified_by_tasks = relationship(
+        "AgentTask",
+        secondary="agent_task_modified_notes",
+        back_populates="modified_notes",
+        lazy="noload"  # Use dynamic loading
+    )
     
     # Future fields to consider:
     # version = Column(Integer, default=1)
