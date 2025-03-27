@@ -68,7 +68,7 @@ services:
     build:
       context: .
       dockerfile: docker/dev/backend.dockerfile
-    command: celery -A celery_worker worker --loglevel=info
+    command: watchmedo auto-restart --directory /app --pattern="*.py" --recursive -- celery -A app.core.celery_app worker --loglevel=info
     volumes:
       - ./backend:/app
       - ./.env:/app/.env
