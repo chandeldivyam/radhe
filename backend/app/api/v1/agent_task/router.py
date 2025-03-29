@@ -27,7 +27,27 @@ async def create_agent_task(
     except Exception as e:
         logger.error(f"Error creating agent task: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
-    
+
+@router.get("/worker/{organization_id}/{task_id}")
+async def get_agent_task(
+    organization_id: str,
+    task_id: str,
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_worker_api_key)
+):
+    try:
+        agent_task = await AgentTaskService.get_agent_task(
+            task_id=task_id,
+            db=db,
+            organization_id=organization_id
+        )
+        if not agent_task:
+            raise HTTPException(status_code=404, detail="Agent task not found")
+        return agent_task
+    except Exception as e:
+        logger.error(f"Error getting agent task: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @router.get("/{task_id}", response_model=AgentTaskResponse)
 async def get_agent_task(
     task_id: str,

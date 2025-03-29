@@ -5,11 +5,16 @@ from pydantic import field_validator
 
 class NoteBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    content: str
+    content: Optional[str]
     parent_id: Optional[str] = None
 
 class NoteCreate(NoteBase):
     pass
+
+class NoteSuggest(NoteBase):
+    user_id: str
+    organization_id: str
+    suggestion_content: Optional[str]
 
 class NoteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
@@ -30,6 +35,7 @@ class NoteResponse(NoteBase):
     depth: int
     children_count: int
     position: int
+    suggestion_content: Optional[str]
 
     class Config:
         from_attributes = True
@@ -61,7 +67,8 @@ class NoteListResponse(BaseModel):
         from_attributes = True
 
 class NoteDetailResponse(NoteListResponse):
-    content: str
+    content: Optional[str]
+    suggestion_content: Optional[str]
 
 class NoteWSResponse(BaseModel):
     binary_content: Optional[List[int]] = None

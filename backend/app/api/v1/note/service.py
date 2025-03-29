@@ -1,9 +1,9 @@
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 from typing import List, Optional, Tuple
 from app.models.note import Note
-from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse, NoteWSResponse
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse, NoteWSResponse, NoteSuggest
 import uuid
-from sqlalchemy import update, func, and_, or_
+from sqlalchemy import func
 import base64
 import logging
 import sqlalchemy
@@ -18,7 +18,7 @@ class NoteService:
     @staticmethod
     async def create_note(
         db: Session,
-        note_data: NoteCreate,
+        note_data: NoteCreate | NoteSuggest,
         user_id: str,
         organization_id: str
     ) -> NoteResponse:
@@ -45,6 +45,7 @@ class NoteService:
             id=note_id,
             title=note_data.title,
             content=note_data.content,
+            suggestion_content=note_data.suggestion_content if isinstance(note_data, NoteSuggest) else None,
             parent_id=note_data.parent_id,
             organization_id=organization_id,
             created_by=user_id,
@@ -103,6 +104,8 @@ class NoteService:
             note.title = note_data.title
         if note_data.content is not None:
             note.content = note_data.content
+        if isinstance(note_data, NoteSuggest) and note_data.suggestion_content is not None:
+            note.suggestion_content = note_data.suggestion_content
         
         db.commit()
         db.refresh(note)
@@ -504,7 +507,8 @@ class NoteService:
                 .where(Note.id == note_id)
                 .values(
                     binary_content=base64_content,
-                    updated_at=func.now()
+                    updated_at=func.now(),
+                    suggestion_content=None
                 )
             )
             

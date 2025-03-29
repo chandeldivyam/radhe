@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 from app.db.base import get_db
 from app.schemas.note import (
-    NoteCreate, 
+    NoteCreate,
+    NoteSuggest, 
     NoteUpdate, 
     NoteResponse, 
     NoteMoveRequest,
@@ -12,7 +13,7 @@ from app.schemas.note import (
     NoteWSResponse,
     NoteWSUpdate
 )
-from app.api.utils.deps import get_current_user
+from app.api.utils.deps import get_current_user, verify_worker_api_key
 from app.api.v1.note.service import NoteService
 import logging
 import base64
@@ -54,6 +55,18 @@ async def list_root_notes(
             status_code=500, 
             detail="An error occurred while listing root notes"
         )
+
+@router.post("/ai/create", response_model=NoteResponse)
+async def suggest_note(
+    note_data: NoteSuggest,
+    db: Session = Depends(get_db),
+    _: bool = Depends(verify_worker_api_key)
+):
+    try:
+        return await NoteService.create_note(db, note_data, note_data.user_id, note_data.organization_id)
+    except Exception as e:
+        logger.error(f"Error suggesting note: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred while suggesting the note")
 
 @router.get("/{note_id}", response_model=NoteDetailResponse)
 async def get_note(

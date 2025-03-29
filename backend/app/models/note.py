@@ -9,7 +9,8 @@ class Note(Base):
 
     id = Column(String, primary_key=True, index=True, default=str(uuid.uuid4()))
     title = Column(String, index=True)
-    content = Column(Text) # We'll migrate to JSON/JSONB later for rich text
+    content = Column(Text, nullable=True)
+    suggestion_content = Column(Text, nullable=True) # Markdown suggestion for creating new note with ai
     
     # Hierarchical structure
     parent_id = Column(String, ForeignKey("note.id"), nullable=True)

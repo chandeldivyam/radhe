@@ -1,7 +1,8 @@
 export interface Note {
 	id: string;
 	title: string;
-	content: string;
+	content: string | null;
+	suggestion_content: string | null;
 	parent_id: string | null;
 	organization_id: string;
 	created_by: string;

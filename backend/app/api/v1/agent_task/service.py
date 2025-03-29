@@ -37,7 +37,7 @@ class AgentTaskService:
             db.commit()
 
         # Trigger Celery task
-        celery_app.send_task('process_agent_task', args=[task.id])
+        celery_app.send_task('process_agent_task', args=[task.id, organization_id, user_id])
         return AgentTaskResponse.model_validate(task)
         
     async def get_agent_task(
