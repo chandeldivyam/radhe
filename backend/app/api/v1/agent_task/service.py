@@ -6,7 +6,7 @@ from app.schemas.agent_task import AgentTaskCreate, AgentTaskResponse, AgentTask
 from app.core.celery_app import celery_app
 import logging
 from sqlalchemy import func
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +43,20 @@ class AgentTaskService:
         celery_app.send_task('process_agent_task', args=[task.id, organization_id, user_id])
         return AgentTaskResponse.model_validate(task)
         
+    @staticmethod
     async def get_agent_task(
         task_id: str,
         db: Session,
         organization_id: str
     ) -> Optional[AgentTaskResponse]:
-        task = db.query(AgentTask).filter(AgentTask.id == task_id, AgentTask.organization_id == organization_id).first()
+        task = db.query(AgentTask)\
+        .options(
+            selectinload(AgentTask.reference_notes),
+            selectinload(AgentTask.modified_notes),
+            selectinload(AgentTask.destination_note)
+        )\
+        .filter(AgentTask.id == task_id, AgentTask.organization_id == organization_id)\
+        .first()
         if not task:
             return None
         return AgentTaskResponse.model_validate(task)
@@ -63,7 +71,13 @@ class AgentTaskService:
         Update the status of an agent task.
         This method is used by the worker API endpoint.
         """
-        task = db.query(AgentTask).filter(AgentTask.id == task_id).first()
+        task = db.query(AgentTask)\
+        .options(
+            selectinload(AgentTask.reference_notes),
+            selectinload(AgentTask.modified_notes),
+            selectinload(AgentTask.destination_note)
+        )\
+        .filter(AgentTask.id == task_id).first()
         if not task:
             return None
         

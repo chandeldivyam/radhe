@@ -20,7 +20,7 @@ export const useTasks = (limit: number = 20) => {
 		queryFn: ({ pageParam = 0 }) => fetchTasks(pageParam * limit, limit),
 		getNextPageParam: (lastPage, allPages) => {
 			// Assuming API returns total count, adjust this logic based on your API's response
-			const totalFetched = allPages.length * limit;
+			const totalFetched = allPages.flatMap((page) => page.items).length;
 			return totalFetched < lastPage.total ? allPages.length : undefined;
 		},
 		initialPageParam: 0,

@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from app.schemas.note import NoteResponse
 
 class AgentType(str, Enum):
     SAAS_WIKI_AGENT = "saas_wiki_agent"
@@ -55,8 +56,8 @@ class AgentTaskResponse(AgentTaskBase):
     created_by: str  # Add who created it
 
     # These fields will be populated from the relationships in your endpoint/service
-    reference_notes_ids: Optional[List[str]] = []
-    modified_note_ids: Optional[List[str]] = []
+    reference_notes: Optional[List[NoteResponse]] = []
+    modified_notes: Optional[List[NoteResponse]] = []
 
     model_config = ConfigDict(from_attributes=True)
 
