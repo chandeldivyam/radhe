@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from app.core.storage import StorageService
 from app.schemas.file import PresignedURLResponse, FileMetadata, DirectUploadResponse
 import logging
-from typing import List, Dict
-import uuid
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +46,10 @@ class FileService:
             
             # Get the public URL for the uploaded file
             public_url = storage_service.get_public_url(file_key)
+
+            # If env is development, we will transform the base url from http://minio:9000 to http://localhost:9000
+            if settings.ENVIRONMENT == "development":
+                public_url = public_url.replace(settings.MINIO_HOST, "localhost")
             
             return DirectUploadResponse(
                 public_url=public_url,

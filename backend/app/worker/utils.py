@@ -4,6 +4,7 @@ import json
 from app.core.config import settings
 import logging
 from typing import Dict, Any
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -87,3 +88,33 @@ def create_suggestion_note(title: str, content: str, suggestion_content: str, pa
         raise Exception(f"Failed to create suggestion note: {response.text}")
     
     return response.json()
+
+def get_public_url(file_path: str, organization_id: str) -> str:
+    url = f"{settings.BACKEND_BASE_URL}/api/v1/files/upload"
+
+    current_type = None
+    file_name = os.path.basename(file_path)
+    ext = os.path.splitext(file_name)[1].lower()
+    
+    if ext == '.mp3':
+        current_type = 'audio/mpeg'
+    elif ext == '.mp4':
+        current_type = 'video/mp4'
+    elif ext == '.jpg' or ext == '.jpeg':
+        current_type = 'image/jpeg'
+    elif ext == '.png':
+        current_type = 'image/png'
+    else:
+        current_type = 'application/octet-stream'
+    
+    files = {'file': (file_name, open(file_path, 'rb'), current_type)}
+    headers = {
+        "X-API-Key": settings.WORKER_API_KEY
+    }
+    data = {'bucket_name': 'radhe-bucket', 'organization_id': organization_id}
+    response = requests.post(url, files=files, data=data, headers=headers)
+    response.raise_for_status()
+
+    return response.json().get('public_url')
+    
+    

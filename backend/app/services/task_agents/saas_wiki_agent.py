@@ -1,5 +1,8 @@
 # ./backend/app/services/task_agents/saas_wiki_agent.py
 import logging
+import os
+import re
+import tempfile
 from typing import List, Optional, Dict
 from typing_extensions import Annotated, TypedDict
 
@@ -9,20 +12,26 @@ from langchain_core.language_models.chat_models import BaseChatModel
 
 # Local Imports
 from app.services.task_agents.base_agent import BaseAgent
-from app.services.llm import initialize_llm # Import the factory function
+from app.services.llm import initialize_llm
+from app.services.video_processor import download_video, extract_frames, generate_transcript
+from app.worker.utils import get_public_url
+import base64
 
 logger = logging.getLogger(__name__)
 
 class SaaSWikiAgent(BaseAgent):
     _SYSTEM_PROMPT = """You are an expert technical writer tasked with generating a concise wiki article suitable for a SaaS company's internal knowledge base.
 Focus on topics relevant to software development, project management, team collaboration, or SaaS business practices.
-Generate **one** article in markdown format. Ensure the title is descriptive and the content is well-structured using markdown (headers, lists, etc.).
-Ensure the output strictly adheres to the required JSON schema with 'title' and 'content' keys."""
+Generate **one** article in markdown format per video. Ensure the title is descriptive and the content is well-structured using markdown (headers, lists, etc.).
+When referencing images from the video, use the markdown image syntax with the frame number visible in the image, e.g., "\n\n![alt_text](frame_X)", where X is the frame number.
+Ensure the output adheres to the JSON schema with 'title' and 'content' keys. Please make sure that the images are a seperate and not inline with the content.
+
+Below is the transcript of a video, and images from the video are provided with frame numbers overlaid (e.g., ![alt_text](frame_1), ![alt_text](frame_2)). Use the transcript and images to create a detailed help center article explaining the concepts shown in the video. Be verbose and include all relevant details."""
 
     class MarkdownArticle(TypedDict):
         """Defines the structure for a single markdown wiki article."""
         title: Annotated[str, ..., "A concise and descriptive title for the article, typically 5-10 words."]
-        content: Annotated[str, ..., "The main body of the article in well-formatted Markdown. Should include headers, lists, or other relevant markdown elements for clarity."]
+        content: Annotated[str, ..., "The main body of the article in well-formatted Markdown."]
 
     def __init__(self, task_id: str,
                  video_urls: List[str],
@@ -37,7 +46,6 @@ Ensure the output strictly adheres to the required JSON schema with 'title' and 
         self.reference_notes_ids = reference_notes_ids
         self.destination_note_id = destination_note_id
         self.instructions = instructions
-
         self.llm_provider = llm_provider
         self.llm_model = llm_model
 
@@ -59,51 +67,90 @@ Ensure the output strictly adheres to the required JSON schema with 'title' and 
 
     def process_task(self):
         self._get_reference_notes()
+        articles = []
 
-        markdown_articles: List[Dict[str, str]] = []
-        num_articles_to_generate = len(self.video_urls)
-
-        if num_articles_to_generate == 0:
+        if not self.video_urls:
             logger.warning(f"Task {self.task_id}: No video URLs provided, terminating agent")
             return []
 
-        prompt_messages = [
-            SystemMessage(content=self._SYSTEM_PROMPT),
-            HumanMessage(content=f"Generate a wiki article based on the system instructions. You can use the following context if relevant, otherwise generate a general article on the specified topics: {self.instructions or 'General SaaS/Software topic'}")
-        ]
-
-        try:
-            structured_llm = self.llm.with_structured_output(self.MarkdownArticle)
-        except AttributeError:
-            logger.error(f"Task {self.task_id}: The initialized LLM client ({self.llm.__class__.__name__}) might not support `with_structured_output`. Provider: {self.llm_provider}, Model: {self.llm_model}")
-            return []
-        except Exception as e:
-            logger.error(f"Task {self.task_id}: Error setting up structured output for {self.llm_provider}/{self.llm_model}: {e}", exc_info=True)
-            return []
-
-        # Generate one article per video URL (current logic, might need refinement)
         for video_url in self.video_urls:
-            # TODO: If video content/transcript is available, it should be added to the prompt context here.
-            # Currently, the video_url itself isn't used in the prompt.
-            logger.info(f"Task {self.task_id}: Generating article for video (placeholder logic): {video_url}")
-
             try:
-                # Invoke the LLM with the prompt
-                generated_article: Dict[str, str] = structured_llm.invoke(prompt_messages)
+                video_path = download_video(video_url)
+                logger.info(f"Task {self.task_id}: Downloaded video {video_url} to {video_path}")
 
-                # Validate the output structure
-                if not generated_article or not isinstance(generated_article, dict) or \
-                   not generated_article.get("title") or not generated_article.get("content"):
-                    logger.warning(f"Task {self.task_id}: Generated article has missing title/content or invalid format. LLM Output: {generated_article}")
-                    continue # Skip this article
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    image_paths = extract_frames(video_path, temp_dir)
+                    logger.info(f"Task {self.task_id}: Extracted {len(image_paths)} frames from {video_url}")
 
-                # Add the valid article to the list
-                markdown_articles.append(generated_article)
-                logger.info(f"Task {self.task_id}: Successfully generated article: {generated_article.get('title', 'Untitled')}")
+                    transcript = generate_transcript(video_path)
+                    logger.info(f"Task {self.task_id}: Generated transcript for {video_url}")
+
+                    system_message = SystemMessage(content=self._SYSTEM_PROMPT)
+                    human_content = [
+                        {"type": "text", "text": f"Transcript: {transcript}"},
+                    ]
+                    for image_path in image_paths:
+                        with open(image_path, "rb") as f:
+                            image_data = base64.b64encode(f.read()).decode("utf-8")
+                        human_content.append({
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
+                        })
+                    human_message = HumanMessage(content=human_content)
+                    prompt_messages = [system_message, human_message]
+
+                    structured_llm = self.llm.with_structured_output(self.MarkdownArticle)
+                    generated_article = structured_llm.invoke(prompt_messages)
+                    logger.info(f"Task {self.task_id}: Generated article for {video_url}")
+
+                    if generated_article and isinstance(generated_article, dict) and "content" in generated_article:
+                        markdown_content = generated_article["content"]
+                        # Find mentioned frames in the markdown
+                        frame_pattern = r'!\[.*?\]\((frame_\d+)\)'
+                        mentioned_frames = set(re.findall(frame_pattern, markdown_content))
+
+                        # Upload only the mentioned frames and get public URLs
+                        frame_to_url = {}
+                        for frame in mentioned_frames:
+                            image_path = os.path.join(temp_dir, f"{frame}.jpg")
+                            if os.path.exists(image_path):
+                                try:
+                                    public_url = get_public_url(image_path, self.organization_id)
+                                    frame_to_url[frame] = public_url
+                                    logger.info(f"Task {self.task_id}: Uploaded {frame} to {public_url}")
+                                except Exception as e:
+                                    logger.error(f"Task {self.task_id}: Failed to upload {image_path}: {e}")
+                            else:
+                                logger.warning(f"Task {self.task_id}: Frame {frame} not found in temporary directory")
+
+                        # Replace frame placeholders with public URLs
+                        def replace_frame_with_url(match):
+                            alt_text = match.group(2)  # Capture the alt text
+                            frame = match.group(4)     # Capture the frame number
+                            public_url = frame_to_url.get(frame, frame)  # Default to frame if upload failed
+                            return f"![{alt_text}]({public_url})"
+                        pattern = r'(!\[)(.*?)(\]\()(frame_\d+)(\))'
+                        markdown_content = re.sub(pattern, replace_frame_with_url, markdown_content)
+                        generated_article["content"] = markdown_content
+                        logger.info(f"Task {self.task_id}: Generated article for {video_url}: {generated_article}")
+                        articles.append(generated_article)
+                    else:
+                        logger.warning(f"Task {self.task_id}: Generated article missing content for {video_url}")
+
+                        
+                    logger.info(f"Task {self.task_id}: Uploaded frames for {video_url}")
 
             except Exception as e:
-                logger.error(f"Task {self.task_id}: Error generating article using {self.llm_provider}/{self.llm_model}: {e}", exc_info=True)
-                continue # Skip this article on error
+                logger.error(f"Task {self.task_id}: Error processing video {video_url}: {e}")
+                continue
+        
+            finally:
+                if 'video_path' in locals():
+                    try:
+                        os.remove(video_path)
+                        logger.info(f"Task {self.task_id}: Cleaned up temporary file {video_path}")
+                    except Exception as e:
+                        logger.warning(f"Task {self.task_id}: Failed to delete {video_path}: {e}")
 
-        logger.info(f"Task {self.task_id}: Finished processing. Generated {len(markdown_articles)} articles.")
-        return markdown_articles
+        return articles
+        

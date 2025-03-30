@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     AZURE_OPENAI_ENDPOINT: Optional[str] = None
     AZURE_OPENAI_API_KEY: Optional[str] = None
 
+    # Transcription
+    DEEPGRAM_API_KEY: Optional[str] = None
+
     # Traefik
     DOMAIN_NAME: Optional[str] = None
     ACME_EMAIL: Optional[str] = None

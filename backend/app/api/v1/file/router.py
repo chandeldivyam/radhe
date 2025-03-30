@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from app.schemas.file import PresignedURLResponse, DirectUploadResponse
-from app.api.utils.deps import get_current_user
+from app.api.utils.deps import get_current_user, verify_worker_api_key
 from app.api.v1.file.service import FileService
 import logging
 import uuid
@@ -30,7 +30,9 @@ async def get_presigned_upload_url(
 @router.post("/upload", response_model=DirectUploadResponse)
 async def upload_file(
     file: UploadFile = File(...),
-    bucket_name: str = Form("direct-upload"),
+    bucket_name: str = Form("radhe-bucket"),
+    organization_id: str = Form(...),
+    _: bool = Depends(verify_worker_api_key)
 ):
     """Upload a file directly to storage through the API"""
     try:
@@ -38,7 +40,7 @@ async def upload_file(
         file_content = await file.read()
         
         # Generate a unique file key
-        file_key = f"{uuid.uuid4()}"
+        file_key = f"{organization_id}/{uuid.uuid4()}"
         
         # Upload the file
         result = await FileService.upload_file_direct(
