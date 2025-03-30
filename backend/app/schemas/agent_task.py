@@ -13,6 +13,7 @@ class AgentTaskStatus(str, Enum):
     FAILED = "failed"
 
 class AgentTaskBase(BaseModel):
+    title: str
     agent_type: AgentType
     status: AgentTaskStatus
     organization_id: str
@@ -20,6 +21,7 @@ class AgentTaskBase(BaseModel):
     
 
 class AgentTaskCreate(BaseModel):
+    title: str
     agent_type: AgentType
     video_urls: List[str]
     reference_notes_ids: Optional[List[str]]

@@ -1,4 +1,4 @@
-import { Home, Settings, FileText } from 'lucide-react';
+import { Home, Settings, FileText, Activity } from 'lucide-react';
 
 export interface NavItem {
 	title: string;
@@ -17,6 +17,11 @@ export const navigationConfig: NavItem[] = [
 		title: 'Notes',
 		href: '/notes',
 		icon: FileText,
+	},
+	{
+		title: 'Tasks',
+		href: '/tasks',
+		icon: Activity,
 	},
 	{
 		title: 'Settings',

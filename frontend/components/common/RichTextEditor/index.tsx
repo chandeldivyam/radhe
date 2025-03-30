@@ -1,7 +1,6 @@
 'use client';
 
 import './editor.css';
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -69,7 +68,11 @@ function createWebsocketProvider({
 }: {
 	id: string;
 	yjsDocMap: Map<string, Y.Doc>;
-}): { provider: Provider; websocketProvider: HocuspocusProviderWebsocket; initialSyncPromise: Promise<void> } {
+}): {
+	provider: Provider;
+	websocketProvider: HocuspocusProviderWebsocket;
+	initialSyncPromise: Promise<void>;
+} {
 	let doc = yjsDocMap.get(id);
 
 	if (!doc) {
@@ -190,9 +193,12 @@ export function RichTextEditor({
 	markdown,
 }: RichTextEditorProps) {
 	// Use state to hold the promise, ensuring it's stable across re-renders
-	const [initialSyncPromise, setInitialSyncPromise] = useState<Promise<void> | null>(null);
+	const [initialSyncPromise, setInitialSyncPromise] =
+		useState<Promise<void> | null>(null);
 	const providerRef = useRef<EnhancedProvider | null>(null);
-	const websocketProviderRef = useRef<HocuspocusProviderWebsocket | null>(null);
+	const websocketProviderRef = useRef<HocuspocusProviderWebsocket | null>(
+		null
+	);
 	const cursorsContainerRef = useRef<HTMLDivElement>(null);
 	const editorContainerRef = useRef<HTMLDivElement>(null);
 	const [isEditorReady, setIsEditorReady] = useState(false);
@@ -261,8 +267,11 @@ export function RichTextEditor({
 						providerFactory={(id, yjsDocMap) => {
 							if (!providerRef.current) {
 								console.log(`Creating provider for ${id}`);
-								const { provider, websocketProvider, initialSyncPromise: syncPromise } =
-									createWebsocketProvider({ id, yjsDocMap });
+								const {
+									provider,
+									websocketProvider,
+									initialSyncPromise: syncPromise,
+								} = createWebsocketProvider({ id, yjsDocMap });
 								providerRef.current =
 									provider as EnhancedProvider;
 								websocketProviderRef.current =
@@ -277,7 +286,7 @@ export function RichTextEditor({
 						username={username}
 						cursorsContainerRef={cursorsContainerRef}
 					/>
-					
+
 					{/* Add the Initial Markdown Loader Plugin */}
 					<InitialMarkdownLoaderPlugin
 						initialSyncPromise={initialSyncPromise}

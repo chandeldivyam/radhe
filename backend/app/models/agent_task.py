@@ -32,6 +32,7 @@ class AgentTask(Base):
 
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))  # Use lambda for default
     agent_type = Column(String, nullable=False)
+    title = Column(String, nullable=False)
     status = Column(Enum(AgentTaskStatus), nullable=False, default=AgentTaskStatus.PENDING)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

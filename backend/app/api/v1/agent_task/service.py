@@ -2,9 +2,11 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from app.models.agent_task import AgentTask
 from app.models.note import Note
-from app.schemas.agent_task import AgentTaskCreate, AgentTaskResponse, AgentTaskStatus
+from app.schemas.agent_task import AgentTaskCreate, AgentTaskResponse, AgentTaskStatus, AgentTaskList, AgentTaskListResponse
 from app.core.celery_app import celery_app
 import logging
+from sqlalchemy import func
+from sqlalchemy.orm import load_only
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ class AgentTaskService:
     ) -> AgentTaskResponse:
         task = AgentTask(
             agent_type=agent_task_data.agent_type,
+            title=agent_task_data.title,
             status=AgentTaskStatus.PENDING,
             video_urls=agent_task_data.video_urls,
             destination_note_id=agent_task_data.destination_note_id,
@@ -69,3 +72,16 @@ class AgentTaskService:
         db.refresh(task)
         
         return AgentTaskResponse.model_validate(task)
+    
+    @staticmethod
+    async def list_agent_tasks(
+        db: Session,
+        organization_id: str,
+        skip: int = 0,
+        limit: int = 20
+    ) -> AgentTaskList:
+        # We need to fetch task with offset and limit from the database
+        tasks = db.query(AgentTask).where(AgentTask.organization_id == organization_id).options(load_only(AgentTask.id, AgentTask.agent_type, AgentTask.title, AgentTask.status, AgentTask.created_at)).order_by(AgentTask.created_at.desc()).offset(skip).limit(limit).all()
+        total = db.query(func.count(AgentTask.id)).where(AgentTask.organization_id == organization_id).scalar()
+        return AgentTaskList(items=[AgentTaskListResponse.model_validate(task) for task in tasks], total=total)
+        

@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.utils.deps import get_current_user, verify_worker_api_key
 from sqlalchemy.orm import Session
 from app.db.base import get_db
-from app.schemas.agent_task import AgentTaskCreate, AgentTaskResponse, AgentTaskStatusUpdate
+from app.schemas.agent_task import AgentTaskCreate, AgentTaskResponse, AgentTaskStatusUpdate, AgentTaskList, AgentTaskListResponse
 from app.api.v1.agent_task.service import AgentTaskService
 from app.models.user import User
+from fastapi import Query
 import logging
 
 router = APIRouter(prefix="/agent_tasks")
@@ -89,4 +90,23 @@ async def update_task_status(
         return agent_task
     except Exception as e:
         logger.error(f"Error updating agent task status: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/", response_model=AgentTaskList)
+async def list_agent_tasks(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0, description="Number of items to skip"),
+    limit: int = Query(20, ge=1, le=50, description="Number of items to return")
+):
+    try:
+        task_list = await AgentTaskService.list_agent_tasks(
+            db=db,
+            organization_id=current_user.organization_id,
+            skip=skip,
+            limit=limit
+        )
+        return task_list
+    except Exception as e:
+        logger.error(f"Error listing agent tasks: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

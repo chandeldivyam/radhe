@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/common/theme-provider';
 import { AuthProvider } from '@/lib/auth/authContext';
 import { ToastProvider } from '@/components/common/toast-provider';
+import { ReactQueryClientProvider } from '@/components/common/query-client-provider';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -38,7 +39,9 @@ export default function RootLayout({
 						disableTransitionOnChange
 					>
 						<ToastProvider />
-						{children}
+						<ReactQueryClientProvider>
+							{children}
+						</ReactQueryClientProvider>
 					</ThemeProvider>
 				</AuthProvider>
 			</body>

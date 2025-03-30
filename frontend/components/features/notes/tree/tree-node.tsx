@@ -151,7 +151,9 @@ export function TreeNode({
 					className="text-sm truncate min-w-0 flex-1"
 					title={note.title}
 				>
-					{note.title.length > 18 ? `${note.title.slice(0, 18)}...` : note.title}
+					{note.title.length > 18
+						? `${note.title.slice(0, 18)}...`
+						: note.title}
 				</span>
 
 				<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pr-5">
