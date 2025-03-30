@@ -53,12 +53,13 @@ def process_agent_task(task_id: str, organization_id: str, user_id: str):
             reference_notes_ids=reference_notes_ids,
             destination_note_id=destination_note_id,
             instructions=instructions,
-            organization_id=organization_id
+            organization_id=organization_id,
+            llm_provider="gemini",
+            llm_model="gemini-2.0-flash"
         )
         
         # Process the task and get the output
         agent_output = wiki_agent.process_task()
-        logger.info(f"SaaSWikiAgent processed task {task_id}")
         
         # Create suggestion notes with the output
         for note_data in agent_output:

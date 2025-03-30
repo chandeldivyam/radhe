@@ -19,3 +19,9 @@ minio
 flower
 gunicorn
 requests
+langchain
+langgraph
+langsmith
+langchain_openai
+langchain-community
+langchain-google-genai
