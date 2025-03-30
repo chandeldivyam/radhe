@@ -105,45 +105,42 @@ Below is the transcript of a video, and images from the video are provided with 
 
                     if generated_article and isinstance(generated_article, dict) and "content" in generated_article:
                         markdown_content = generated_article["content"]
-                        # Find mentioned frames in the markdown
                         frame_pattern = r'!\[.*?\]\((frame_\d+)\)'
                         mentioned_frames = set(re.findall(frame_pattern, markdown_content))
 
-                        # Upload only the mentioned frames and get public URLs
                         frame_to_url = {}
                         for frame in mentioned_frames:
-                            image_path = os.path.join(temp_dir, f"{frame}.jpg")
+                            image_path = os.path.join(temp_dir, f"{frame}_original.jpg")
                             if os.path.exists(image_path):
                                 try:
                                     public_url = get_public_url(image_path, self.organization_id)
                                     frame_to_url[frame] = public_url
-                                    logger.info(f"Task {self.task_id}: Uploaded {frame} to {public_url}")
+                                    logger.info(f"Task {self.task_id}: Uploaded {frame}_original.jpg to {public_url}")
                                 except Exception as e:
                                     logger.error(f"Task {self.task_id}: Failed to upload {image_path}: {e}")
                             else:
-                                logger.warning(f"Task {self.task_id}: Frame {frame} not found in temporary directory")
+                                logger.warning(f"Task {self.task_id}: Unprocessed frame {frame}_original.jpg not found")
 
                         # Replace frame placeholders with public URLs
                         def replace_frame_with_url(match):
-                            alt_text = match.group(2)  # Capture the alt text
-                            frame = match.group(4)     # Capture the frame number
-                            public_url = frame_to_url.get(frame, frame)  # Default to frame if upload failed
+                            frame = match.group(1)
+                            public_url = frame_to_url.get(frame, frame)
+                            # Extract alt text from the match
+                            alt_text = match.group(0).split('[')[1].split(']')[0]
                             return f"![{alt_text}]({public_url})"
-                        pattern = r'(!\[)(.*?)(\]\()(frame_\d+)(\))'
-                        markdown_content = re.sub(pattern, replace_frame_with_url, markdown_content)
+                        markdown_content = re.sub(frame_pattern, replace_frame_with_url, markdown_content)
                         generated_article["content"] = markdown_content
                         logger.info(f"Task {self.task_id}: Generated article for {video_url}: {generated_article}")
                         articles.append(generated_article)
                     else:
                         logger.warning(f"Task {self.task_id}: Generated article missing content for {video_url}")
 
-                        
                     logger.info(f"Task {self.task_id}: Uploaded frames for {video_url}")
 
             except Exception as e:
                 logger.error(f"Task {self.task_id}: Error processing video {video_url}: {e}")
                 continue
-        
+            
             finally:
                 if 'video_path' in locals():
                     try:
@@ -153,4 +150,3 @@ Below is the transcript of a video, and images from the video are provided with 
                         logger.warning(f"Task {self.task_id}: Failed to delete {video_path}: {e}")
 
         return articles
-        
