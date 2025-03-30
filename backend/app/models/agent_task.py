@@ -67,12 +67,3 @@ class AgentTask(Base):
     created_by_user = relationship("User", foreign_keys=[created_by])
     organization = relationship("Organization")  # Add relationship to Organization
     destination_note = relationship("Note", foreign_keys=[destination_note_id])  # Relationship to the destination note
-
-
-
-
-
-
-
-    
-    

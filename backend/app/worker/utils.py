@@ -52,7 +52,7 @@ def get_task_details(task_id: str, organization_id: str, api_base_url: str) -> D
     
     return response.json()
 
-def create_suggestion_note(title: str, content: str, suggestion_content: str, parent_id: str, user_id: str, organization_id: str, api_base_url: str) -> Dict[str, Any]:
+def create_suggestion_note(title: str, content: str, suggestion_content: str, parent_id: str, user_id: str, organization_id: str, api_base_url: str, agent_task_id: str) -> Dict[str, Any]:
     """
     Create a suggestion note via the API.
     
@@ -78,7 +78,8 @@ def create_suggestion_note(title: str, content: str, suggestion_content: str, pa
         "suggestion_content": suggestion_content,
         "parent_id": parent_id,
         "user_id": user_id,
-        "organization_id": organization_id
+        "organization_id": organization_id,
+        "agent_task_id": agent_task_id
     }
     
     response = requests.post(url, headers=headers, data=json.dumps(data))

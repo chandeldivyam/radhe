@@ -70,7 +70,8 @@ def process_agent_task(task_id: str, organization_id: str, user_id: str):
                 parent_id=destination_note_id,
                 user_id=user_id,
                 organization_id=organization_id,
-                api_base_url=api_base_url
+                api_base_url=api_base_url,
+                agent_task_id=task_id
             )
         
         # Update status to COMPLETED

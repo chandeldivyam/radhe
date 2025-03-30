@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional, Tuple
 from app.models.note import Note
+from app.models.agent_task import AgentTask, agent_task_modified_notes, agent_task_reference_notes
 from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse, NoteMoveRequest, NoteListResponse, NoteDetailResponse, NoteWSResponse, NoteSuggest
 import uuid
 from sqlalchemy import func
@@ -56,6 +57,20 @@ class NoteService:
         )
         
         db.add(db_note)
+        
+        if isinstance(note_data, NoteSuggest) and note_data.agent_task_id:
+            agent_task = db.query(AgentTask).filter(
+                AgentTask.id == note_data.agent_task_id,
+                AgentTask.organization_id == organization_id
+            ).first()
+            if agent_task:
+                if agent_task.modified_notes and isinstance(agent_task.modified_notes, list) and db_note not in agent_task.modified_notes:
+                    agent_task.modified_notes.append(db_note)
+                else:
+                    agent_task.modified_notes = [db_note]
+            else:
+                logger.warning(f"Agent task {note_data.agent_task_id} not found or doesn't belong to organization {organization_id}")
+
         db.commit()
         db.refresh(db_note)
         
@@ -138,6 +153,20 @@ class NoteService:
         
         if not notes_to_delete:
             return False
+
+        note_ids_to_delete = [n.id for n in notes_to_delete]
+        db.execute(
+            sqlalchemy.delete(agent_task_modified_notes).where(
+                agent_task_modified_notes.c.note_id.in_(note_ids_to_delete)
+            )
+        )
+    
+        # Remove references from agent_task_reference_notes
+        db.execute(
+            sqlalchemy.delete(agent_task_reference_notes).where(
+                agent_task_reference_notes.c.note_id.in_(note_ids_to_delete)
+            )
+        )   
         
         # Delete all the notes
         for note in notes_to_delete:

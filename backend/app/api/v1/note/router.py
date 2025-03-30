@@ -11,7 +11,7 @@ from app.schemas.note import (
     NoteListResponse,
     NoteDetailResponse,
     NoteWSResponse,
-    NoteWSUpdate
+    NoteWSUpdate,
 )
 from app.api.utils.deps import get_current_user, verify_worker_api_key
 from app.api.v1.note.service import NoteService
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=NoteResponse)
 async def create_note(
-    note_data: NoteCreate,
+    note_data: NoteCreate | NoteSuggest,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):

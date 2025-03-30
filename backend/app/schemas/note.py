@@ -15,6 +15,7 @@ class NoteSuggest(NoteBase):
     user_id: str
     organization_id: str
     suggestion_content: Optional[str]
+    agent_task_id: Optional[str] = None
 
 class NoteUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
