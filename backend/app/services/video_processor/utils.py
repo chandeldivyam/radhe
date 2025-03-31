@@ -24,6 +24,8 @@ def download_video(video_url: str) -> str:
         Exception: If the download fails.
     """
     try:
+        if settings.ENVIRONMENT == "development" and settings.MINIO_URL:
+            video_url = video_url.replace("http://localhost:9000", f"{settings.MINIO_URL}")
         response = requests.get(video_url, stream=True)
         response.raise_for_status()
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as tmp_file:
