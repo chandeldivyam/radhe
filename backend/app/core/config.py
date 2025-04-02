@@ -41,12 +41,25 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: str
 
+    # Celery
+    BACKEND_BASE_URL: Optional[str] = None
+    WORKER_API_KEY: Optional[str] = None
+    
     # Flower
     ENABLE_FLOWER: bool = False
     FLOWER_PORT: int = 5555
     FLOWER_USER: str
     FLOWER_PASSWORD: str
     FLOWER_URL: Optional[str] = None
+
+    # LLM
+    GEMINI_API_KEY: Optional[str] = None
+
+    AZURE_OPENAI_ENDPOINT: Optional[str] = None
+    AZURE_OPENAI_API_KEY: Optional[str] = None
+
+    # Transcription
+    DEEPGRAM_API_KEY: Optional[str] = None
 
     # Traefik
     DOMAIN_NAME: Optional[str] = None

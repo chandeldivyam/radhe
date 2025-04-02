@@ -1,7 +1,6 @@
 'use client';
 
 import './editor.css';
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { ContentEditable } from '@lexical/react/LexicalContentEditable';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -35,11 +34,14 @@ import DragDropPastePlugin from './plugins/DragDropPastePlugin';
 import { SuggestionPlugin } from './plugins/SuggestionPlugin';
 import { SuggestionUIPlugin } from './plugins/SuggestionUIPlugin';
 import { MarkdownToNotePlugin } from './plugins/MarkdownToNote';
+import { EditorContentSaverPlugin } from './plugins/EditorContentSaver';
+import { InitialMarkdownLoaderPlugin } from './plugins/InitialMarkdownLoaderPlugin';
 
 interface RichTextEditorProps {
 	noteId: string;
 	username?: string;
 	editable?: boolean;
+	markdown?: string;
 }
 
 // Define extended provider interface with our custom properties
@@ -47,6 +49,7 @@ interface EnhancedProvider extends Provider {
 	_syncTimeout?: NodeJS.Timeout;
 	_retryCount?: number;
 	_isInitialSync?: boolean;
+	_resolveInitialSync?: () => void; // Callback to resolve promise
 }
 
 // Update the websocket configuration
@@ -65,13 +68,23 @@ function createWebsocketProvider({
 }: {
 	id: string;
 	yjsDocMap: Map<string, Y.Doc>;
-}) {
+}): {
+	provider: Provider;
+	websocketProvider: HocuspocusProviderWebsocket;
+	initialSyncPromise: Promise<void>;
+} {
 	let doc = yjsDocMap.get(id);
 
 	if (!doc) {
 		doc = new Y.Doc();
 		yjsDocMap.set(id, doc);
 	}
+
+	// Create a promise that will resolve upon initial sync
+	let resolveInitialSync!: () => void;
+	const initialSyncPromise = new Promise<void>((resolve) => {
+		resolveInitialSync = resolve;
+	});
 
 	// First create the provider with minimal configuration
 	const hocusProvider = new HocuspocusProvider({
@@ -85,6 +98,7 @@ function createWebsocketProvider({
 
 	// Add a flag to track initial connection state
 	enhancedProvider._isInitialSync = true;
+	enhancedProvider._resolveInitialSync = resolveInitialSync; // Store resolver
 
 	// Then set up the callbacks separately
 	hocusProvider.on('synced', ({ state }: { state: boolean }) => {
@@ -97,13 +111,19 @@ function createWebsocketProvider({
 				enhancedProvider._syncTimeout = undefined;
 			}
 
-			// Mark that we've completed initial sync
-			enhancedProvider._isInitialSync = false;
+			// Resolve the promise only on the first successful sync
+			if (enhancedProvider._isInitialSync) {
+				enhancedProvider._isInitialSync = false;
+				console.log(`Document ${id} initial sync complete.`);
+				if (enhancedProvider._resolveInitialSync) {
+					enhancedProvider._resolveInitialSync();
+				}
+			}
 		}
 	});
 
 	hocusProvider.on('status', ({ status }: { status: string }) => {
-		console.log(`Connection status: ${status}`);
+		console.log(`Connection status for ${id}: ${status}`);
 
 		if (status === 'connected') {
 			// Set a timeout for sync completion
@@ -115,7 +135,7 @@ function createWebsocketProvider({
 
 				enhancedProvider._syncTimeout = setTimeout(() => {
 					console.warn(
-						`Document sync timed out after ${timeoutDuration}ms - forcing UI ready state`
+						`Document ${id} sync timed out after ${timeoutDuration}ms - forcing UI ready state`
 					);
 
 					// Only force reconnection on initial sync issues
@@ -123,15 +143,26 @@ function createWebsocketProvider({
 						hocusProvider.disconnect();
 						setTimeout(() => {
 							console.log(
-								'Attempting reconnection after timeout'
+								`Attempting reconnection for ${id} after timeout`
 							);
 							hocusProvider.connect();
 						}, 200); // Shorter reconnection delay for initial sync
+
+						// Resolve the promise even on timeout to avoid blocking forever
+						if (enhancedProvider._resolveInitialSync) {
+							enhancedProvider._resolveInitialSync(); // Potentially unblock with potentially incorrect state initially
+						}
 					}
 
 					// Mark that we've passed initial sync phase regardless
 					enhancedProvider._isInitialSync = false;
 				}, timeoutDuration);
+			}
+		} else if (status === 'disconnected' || status === 'connecting') {
+			// Clear timeout if disconnected or still trying to connect
+			if (enhancedProvider._syncTimeout) {
+				clearTimeout(enhancedProvider._syncTimeout);
+				enhancedProvider._syncTimeout = undefined;
 			}
 		}
 	});
@@ -151,6 +182,7 @@ function createWebsocketProvider({
 	return {
 		provider: enhancedProvider as unknown as Provider,
 		websocketProvider: websocket,
+		initialSyncPromise, // Return the promise
 	};
 }
 
@@ -158,7 +190,11 @@ export function RichTextEditor({
 	noteId,
 	username,
 	editable = true,
+	markdown,
 }: RichTextEditorProps) {
+	// Use state to hold the promise, ensuring it's stable across re-renders
+	const [initialSyncPromise, setInitialSyncPromise] =
+		useState<Promise<void> | null>(null);
 	const providerRef = useRef<EnhancedProvider | null>(null);
 	const websocketProviderRef = useRef<HocuspocusProviderWebsocket | null>(
 		null
@@ -183,6 +219,7 @@ export function RichTextEditor({
 				initialConfig={{
 					...editorConfig,
 					editable: editable,
+					// Remove editorState initialization - will be handled after sync
 				}}
 			>
 				<div
@@ -223,24 +260,37 @@ export function RichTextEditor({
 					<SuggestionPlugin />
 					<SuggestionUIPlugin />
 					<MarkdownToNotePlugin />
+					<EditorContentSaverPlugin noteId={noteId} />
 					<CollaborationPlugin
 						key={noteId}
 						id={noteId}
 						providerFactory={(id, yjsDocMap) => {
 							if (!providerRef.current) {
-								const { provider, websocketProvider } =
-									createWebsocketProvider({ id, yjsDocMap });
+								console.log(`Creating provider for ${id}`);
+								const {
+									provider,
+									websocketProvider,
+									initialSyncPromise: syncPromise,
+								} = createWebsocketProvider({ id, yjsDocMap });
 								providerRef.current =
 									provider as EnhancedProvider;
 								websocketProviderRef.current =
 									websocketProvider;
+								setInitialSyncPromise(syncPromise); // Store the promise in state
 								return providerRef.current as Provider;
 							}
+							console.log(`Reusing provider for ${id}`);
 							return providerRef.current as Provider;
 						}}
 						shouldBootstrap={true}
 						username={username}
 						cursorsContainerRef={cursorsContainerRef}
+					/>
+
+					{/* Add the Initial Markdown Loader Plugin */}
+					<InitialMarkdownLoaderPlugin
+						initialSyncPromise={initialSyncPromise}
+						markdown={markdown}
 					/>
 				</div>
 			</LexicalComposer>

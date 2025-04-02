@@ -8,12 +8,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     postgresql-client \
     inotify-tools \
+    python3-opencv \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY ./backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install debugpy
+RUN pip install debugpy watchdog
 
 # Copy Alembic configuration
 COPY ./backend/alembic.ini .

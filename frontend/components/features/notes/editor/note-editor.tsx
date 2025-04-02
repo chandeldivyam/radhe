@@ -15,7 +15,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
 		<div className="relative h-full flex flex-col">
 			{/* Editor */}
 			<div className="min-h-[calc(100vh-100px)]">
-				<RichTextEditor noteId={note.id} username={user?.email} />
+				<RichTextEditor
+					noteId={note.id}
+					username={user?.email}
+					markdown={note.suggestion_content || undefined}
+				/>
 			</div>
 		</div>
 	);

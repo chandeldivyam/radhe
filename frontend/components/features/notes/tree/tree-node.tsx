@@ -147,8 +147,13 @@ export function TreeNode({
 					<GripVertical className="h-4 w-4 text-muted-foreground absolute opacity-0 transition-opacity group-hover:opacity-100 cursor-grab active:cursor-grabbing" />
 				</div>
 
-				<span className="text-sm truncate min-w-0 flex-1">
-					{note.title}
+				<span
+					className="text-sm truncate min-w-0 flex-1"
+					title={note.title}
+				>
+					{note.title.length > 18
+						? `${note.title.slice(0, 18)}...`
+						: note.title}
 				</span>
 
 				<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pr-5">

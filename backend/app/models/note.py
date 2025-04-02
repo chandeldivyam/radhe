@@ -9,7 +9,8 @@ class Note(Base):
 
     id = Column(String, primary_key=True, index=True, default=str(uuid.uuid4()))
     title = Column(String, index=True)
-    content = Column(Text) # We'll migrate to JSON/JSONB later for rich text
+    content = Column(Text, nullable=True)
+    suggestion_content = Column(Text, nullable=True) # Markdown suggestion for creating new note with ai
     
     # Hierarchical structure
     parent_id = Column(String, ForeignKey("note.id"), nullable=True)
@@ -33,6 +34,20 @@ class Note(Base):
         backref=backref('parent', remote_side=[id]),
         lazy='noload',  # Don't load by default
         cascade="all, delete-orphan"
+    )
+
+    referenced_by_tasks = relationship(
+        "AgentTask",
+        secondary="agent_task_reference_notes",
+        back_populates="reference_notes",
+        lazy="noload"  # Use dynamic loading if you don't always need tasks when loading a note
+    )
+
+    modified_by_tasks = relationship(
+        "AgentTask",
+        secondary="agent_task_modified_notes",
+        back_populates="modified_notes",
+        lazy="noload"  # Use dynamic loading
     )
     
     # Future fields to consider:
