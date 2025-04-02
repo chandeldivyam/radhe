@@ -4,6 +4,7 @@ from app.api.utils.deps import get_current_user, verify_worker_api_key
 from app.api.v1.file.service import FileService
 import logging
 import uuid
+import uuid
 
 router = APIRouter(prefix="/files")
 logger = logging.getLogger(__name__)
