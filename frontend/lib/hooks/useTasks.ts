@@ -1,7 +1,8 @@
 // ./frontend/lib/hooks/useTasks.ts
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { TaskListResponse } from '@/types/task';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { Task } from '@/types/task';
 
 export const fetchTasks = async (
 	skip: number = 0,
@@ -24,5 +25,19 @@ export const useTasks = (limit: number = 20) => {
 			return totalFetched < lastPage.total ? allPages.length : undefined;
 		},
 		initialPageParam: 0,
+	});
+};
+
+export const fetchTask = async (taskId: string): Promise<Task> => {
+	const response = await fetchWithAuth(`/api/tasks/${taskId}`);
+	if (!response.ok) throw new Error('Failed to fetch task');
+	return response.json();
+};
+
+export const useTask = (taskId: string) => {
+	return useQuery({
+		queryKey: ['task', taskId],
+		queryFn: () => fetchTask(taskId),
+		enabled: !!taskId,
 	});
 };

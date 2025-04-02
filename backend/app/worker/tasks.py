@@ -54,8 +54,8 @@ def process_agent_task(task_id: str, organization_id: str, user_id: str):
             destination_note_id=destination_note_id,
             instructions=instructions,
             organization_id=organization_id,
-            llm_provider="azure_openai",
-            llm_model="gpt-4o-mini"
+            llm_provider="gemini",
+            llm_model="gemini-2.0-flash"
         )
         
         # Process the task and get the output
